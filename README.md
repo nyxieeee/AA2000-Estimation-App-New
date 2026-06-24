@@ -17,8 +17,9 @@ Site survey and estimation platform for electronic security systems (CCTV, Fire 
 ## Prerequisites
 
 - Node.js 18+
-- A Supabase project
-- A Google Gemini API key
+- A Supabase project (create one at [supabase.com](https://supabase.com))
+- A Google Gemini API key ([get one here](https://aistudio.google.com/apikey))
+- (Optional) A Groq API key for floor-plan analysis ([console.groq.com](https://console.groq.com))
 
 ## Getting Started
 
@@ -31,12 +32,12 @@ Site survey and estimation platform for electronic security systems (CCTV, Fire 
 
 3. **Configure environment variables** — copy `.env.example` to `.env.local` and fill in:
    ```env
-   VITE_SUPABASE_URL=your_supabase_project_url
+   VITE_SUPABASE_URL=https://your-project.supabase.co
    VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
    GEMINI_API_KEY=your_gemini_api_key
    ```
 
-4. **Run database migrations** — execute the SQL in `supabase/migrations/` against your Supabase project (via Dashboard SQL editor or CLI).
+4. **Run database migrations** — execute the SQL in `supabase/migrations/` against your Supabase project (via Dashboard SQL editor or the Supabase CLI).
 
 5. **Start the dev server**
    ```bash
