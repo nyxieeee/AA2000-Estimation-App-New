@@ -59,51 +59,38 @@ Site survey and estimation platform for electronic security systems (CCTV, Fire 
 
 ### Architecture Diagram
 
-```
-┌──────────────────────────────────────────────────────────────────────────────┐
-│                    CLIENT-SIDE (React SPA)                                   │
-│                                                                              │
-│  ┌──────────┐  ┌────────────┐  ┌──────────────────────────────────────────┐ │
-│  │  App.tsx  │  │  Portal    │  │   Survey Components                      │ │
-│  │ (Router)  │──│  Layout    │──│   (CCTV, FA, FP, AC, BA, Other, Intercom)│ │
-│  │ (State)   │  │ (Sidebar/  │  └──────────────────────────────────────────┘ │
-│  │           │  │  Header)   │  ┌──────────────────────────────────────────┐ │
-│  └──────────┘  └────────────┘  │   Estimations (EstimationScreen, BOQ)     │ │
-│       │                        └──────────────────────────────────────────┘ │
-│       │                        ┌──────────────────────────────────────────┐ │
-│       │                        │   AI Clarification (Gemini chat)         │ │
-│       └────────────────────────┴──────────────────────────────────────────┘ │
-│                                                                              │
-│  @supabase/supabase-js                                                       │
-│  Auth: Supabase Auth (email/password)                                        │
-│  DB: Supabase PostgreSQL + Row-Level Security                                │
-│  Storage: Supabase Storage (floor plans, reports, images)                    │
-└──────────────────────────────────┬───────────────────────────────────────────┘
-                                   │
-                                   │ HTTPS / WebSockets
-                                   ▼
-┌──────────────────────────────────────────────────────────────────────────────┐
-│                    SUPABASE (Backend-as-a-Service)                           │
-│                                                                              │
-│  ┌──────────────────────┐  ┌──────────────────────┐  ┌──────────────────┐   │
-│  │   AUTH               │  │   DATABASE (Postgres) │  │   STORAGE         │   │
-│  │  • Email/password    │  │                       │  │  • floor_plans/   │   │
-│  │  • JWT sessions      │  │  Tables (see schema)  │  │  • reports/       │   │
-│  │  • RLS policies      │  │  • profiles           │  │  • site_images/   │   │
-│  │  • Role claims       │  │  • projects           │  └──────────────────┘   │
-│  │                      │  │  • survey_cctv        │                         │
-│  │                      │  │  • survey_fire_alarm  │                         │
-│  │                      │  │  • survey_access_ctrl │                         │
-│  │                      │  │  • survey_burglar     │                         │
-│  │                      │  │  • survey_fire_prot   │                         │
-│  │                      │  │  • survey_other       │                         │
-│  │                      │  │  • estimations        │                         │
-│  │                      │  │  • consumables        │                         │
-│  │                      │  │  • additional_fees    │                         │
-│  │                      │  │  • notifications      │                         │
-│  │                      │  └──────────────────────┘                         │
-│  └──────────────────────┘                                                   │
-└──────────────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    subgraph Client["Client-Side (React SPA)"]
+        APP["App.tsx<br>State Machine Router"]
+        LAYOUT["PortalLayout<br>Sidebar / Header"]
+        SURVEYS["Survey Components<br>CCTV / FA / FP / AC / BA / Other"]
+        EST["EstimationScreen + BOQ"]
+        AI["AIClarification<br>Gemini Chat"]
+        SUPABASE_CLIENT["@supabase/supabase-js"]
+    end
+
+    subgraph Backend["Supabase (BaaS)"]
+        AUTH["Auth<br>Email/Password<br>JWT + RLS"]
+        DB[("PostgreSQL<br>profiles, projects,<br>survey_*, estimations,<br>consumables, fees,<br>notifications")]
+        STORAGE["Storage<br>floor_plans/<br>site_images/<br>reports/"]
+    end
+
+    APP --> LAYOUT
+    LAYOUT --> SURVEYS
+    LAYOUT --> EST
+    SURVEYS --> AI
+    AI --> EST
+
+    SUPABASE_CLIENT -.-> AUTH
+    SUPABASE_CLIENT -.-> DB
+    SUPABASE_CLIENT -.-> STORAGE
+
+    style Client fill:#1e3a5f,color:#fff,stroke:#0d2137
+    style Backend fill:#1a4731,color:#fff,stroke:#0d2618
+    style AUTH fill:#2d6a4f,color:#fff
+    style DB fill:#2d6a4f,color:#fff
+    style STORAGE fill:#2d6a4f,color:#fff
 ```
 
 ### Client-Side Layers
@@ -264,73 +251,68 @@ CREATE POLICY "admin_survey_access" ON survey_cctv
 
 ## Workflow Flowchart
 
-```
-                  ┌──────────────────────┐
-                  │   ROLE SELECTION     │
-                  │ Technician / Admin    │
-                  └─────────┬────────────┘
-                            │
-              ┌─────────────┴─────────────┐
-              │                           │
-     ┌────────▼────────┐       ┌──────────▼──────────┐
-     │  TECHNICIAN     │       │  SALES / ADMIN       │
-     │  Supabase Auth  │       │  Supabase Auth        │
-     └────────┬────────┘       └──────────┬──────────┘
-              │                           │
-              ▼                           ▼
-     ┌──────────────────┐      ┌──────────────────────────┐
-     │    DASHBOARD     │      │     DASHBOARD             │
-     │ • SELECT projects│      │ • SELECT ALL projects     │
-     │   WHERE assigned │      │ • INSERT new project      │
-     │ • UPDATE response│      │ • UPDATE finalization     │
-     └────────┬─────────┘      └──────────┬───────────────┘
-              │                           │
-              │            ┌───────────────┘
-              ▼            ▼
-     ┌─────────────────────────────────────┐
-     │         PROJECT DETAILS             │
-     │    (view only for techs)            │
-     └────────────────┬────────────────────┘
-                      │
-                      ▼
-     ┌─────────────────────────────────────┐
-     │         SURVEY (Pick system)        │
-     └────────────────┬────────────────────┘
-                      │
-                      ▼
-     ┌──────────────────────────────────────┐
-     │    SYSTEM-SPECIFIC SURVEY FORM        │
-     │ • Floor plan → upload to Storage     │
-     │ • Site images  → upload to Storage   │
-     │ • Device data  → INSERT/UPSERT into  │
-     │   survey_* table                     │
-     └────────────────┬─────────────────────┘
-                      │
-                      ▼
-     ┌──────────────────────────────────────┐
-     │   AI CLARIFICATION (Gemini)          │
-     │ • Client-side Gemini API chat        │
-     │ • Generates audit narrative          │
-     └────────────────┬─────────────────────┘
-                      │
-                      ▼
-     ┌──────────────────────────────────────┐
-     │   ESTIMATION SCREEN                  │
-     │ • Manpower, consumables, fees        │
-     │ • INSERT/UPDATE estimations table    │
-     │ • Generated report → Storage upload  │
-     └────────────────┬─────────────────────┘
-                      │
-        ┌─────────────┴─────────────┐
-        │                           │
-        ▼                           ▼
-  (Next survey)            ┌──────────────────┐
-                           │     SUMMARY      │
-                           │ • SELECT survey +│
-                           │   estimation data│
-                           │ • Admin: finalize│
-                           │ (UPDATE status)  │
-                           └──────────────────┘
+```mermaid
+flowchart TD
+    START([Start]) --> ROLE{Select Role}
+    ROLE --> TECH[Technician]
+    ROLE --> ADMIN[Sales / Admin]
+
+    TECH --> TECH_AUTH[Supabase Auth<br>Email / Password]
+    ADMIN --> ADMIN_AUTH[Supabase Auth<br>Email / Password]
+
+    TECH_AUTH --> TECH_DASH[Dashboard<br>SELECT assigned projects]
+    ADMIN_AUTH --> ADMIN_DASH[Dashboard<br>SELECT all projects<br>INSERT new project]
+
+    TECH_DASH --> RESPONSE{Accept / Decline}
+    RESPONSE -->|Accepted| PROJ_DETAILS[Project Details<br>View only]
+    RESPONSE -->|Declined| TECH_DASH
+
+    ADMIN_DASH --> PROJ_CREATE[Create Project<br>Set scope, assign techs]
+    PROJ_CREATE --> ADMIN_DASH
+
+    PROJ_DETAILS --> PICK_SURVEY[Pick Survey System]
+
+    PICK_SURVEY --> SURVEY_FORM[System-Specific Survey Form]
+    SURVEY_FORM --> UPLOAD_FLOOR[Upload Floor Plan<br>→ Storage: floor_plans]
+    SURVEY_FORM --> UPLOAD_IMAGES[Upload Site Images<br>→ Storage: site_images]
+    SURVEY_FORM --> SAVE_DEVICES[Save Device Data<br>→ INSERT/UPSERT survey_*]
+
+    SAVE_DEVICES --> AI[AI Clarification<br>Gemini Chat + Narrative]
+
+    AI --> ESTIMATION[Estimation Screen]
+    ESTIMATION --> MANPOWER[Set Manpower Breakdown]
+    ESTIMATION --> CONSUMABLES[Add Consumables]
+    ESTIMATION --> FEES[Add Additional Fees]
+    ESTIMATION --> CONSTRAINTS[Site Constraints<br>Physical / Electrical / Installation]
+    ESTIMATION --> CALC[Auto-calculate Costs]
+    ESTIMATION --> UPLOAD_REPORT[Upload Generated Report<br>→ Storage: reports]
+    ESTIMATION --> SAVE_EST[INSERT / UPDATE estimations]
+
+    SAVE_EST --> DECIDE{More Surveys?}
+    DECIDE -->|Yes| PICK_SURVEY
+    DECIDE -->|No| SUMMARY[Summary Screen]
+
+    SUMMARY --> REVIEW{Admin Review}
+    REVIEW --> FINALIZE[Finalize Project<br>UPDATE status]
+    FINALIZE --> APPROVED[Approved / Rejected]
+    APPROVED --> END([End])
+
+    subgraph Supabase
+        AUTH[Auth]
+        DB[(Postgres<br>profiles, projects,<br>survey_*, estimations)]
+        STORAGE[Storage<br>floor_plans, site_images, reports]
+    end
+
+    TECH_AUTH -.-> AUTH
+    ADMIN_AUTH -.-> AUTH
+    TECH_DASH -.-> DB
+    ADMIN_DASH -.-> DB
+    SAVE_DEVICES -.-> DB
+    SAVE_EST -.-> DB
+    UPLOAD_FLOOR -.-> STORAGE
+    UPLOAD_IMAGES -.-> STORAGE
+    UPLOAD_REPORT -.-> STORAGE
+    FINALIZE -.-> DB
 ```
 
 ---
