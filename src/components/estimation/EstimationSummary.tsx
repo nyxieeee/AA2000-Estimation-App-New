@@ -901,11 +901,14 @@ export default function EstimationSummary({ project, user, onBack }: Props) {
                                 onClick={() => {
                                   setConsumables(prev => prev.map(item => {
                                     if (item.id === c.id) {
+                                      const unitPrice = p[priceTier] || 0;
                                       return {
                                         ...item,
                                         productId: p.id,
                                         name: p.name,
                                         category: mapCategoryToOption(p.category),
+                                        unitPrice,
+                                        totalPrice: unitPrice * item.quantity,
                                       };
                                     }
                                     return item;

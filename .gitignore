@@ -35,3 +35,5 @@ FileStorage/
 
 # Local pricing workbook (generate with npm run pricing:export)
 pricing-master.xlsx
+pricing/
+
