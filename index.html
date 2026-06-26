@@ -1,125 +1,33 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>AA2000 Site Survey</title>
-  
-  <!-- PWA & Mobile Optimization -->
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#2563eb">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="AA2000 Pro">
-  <meta name="mobile-web-app-capable" content="yes">
-
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          colors: {
-            blue: {
-              50: '#eff6ff',
-              100: '#dbeafe',
-              400: '#60a5fa',
-              600: '#2563eb',
-              700: '#1d4ed8',
-              800: '#2563eb',
-              900: '#2563eb',
-            }
-          }
-        }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AA2000 · Site Survey Platform</title>
+    <meta name="description" content="AA2000 Site Survey & Estimation Platform for electronic security systems." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <style>
+      @import "tailwindcss";
+      *, *::before, *::after { box-sizing: border-box; }
+      body {
+        background-color: #F4F6FA;
+        min-height: 100vh;
+        margin: 0;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        color: #1E293B;
       }
-    }
-  </script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<script type="importmap">
-{
-  "imports": {
-    "react/": "https://esm.sh/react@^19.2.4/",
-    "react": "https://esm.sh/react@^19.2.4",
-    "@google/genai": "https://esm.sh/@google/genai@^1.38.0",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.4/"
-  }
-}
-</script>
-<style>
-  /* Native App Feel Adjustments */
-  :root {
-    --app-height: 100%;
-  }
-  
-  html, body {
-    height: 100%;
-    width: 100%;
-    margin: 0;
-    padding: 0;
-    background-color: #ffffff;
-    -webkit-tap-highlight-color: transparent;
-  }
-
-  /* Only apply fixed/hidden on mobile if we really want that "app" feel, 
-     but for a website version, it's better to allow natural scrolling 
-     especially on desktop. */
-  @media (max-width: 768px) {
-    html, body {
-      overflow: hidden;
-      height: 100dvh;
-      position: fixed;
-      overscroll-behavior: none;
-    }
-  }
-
-  /* GLOBAL: Hide Scrollbars while maintaining scroll functionality */
-  *::-webkit-scrollbar {
-    display: none; /* Chrome, Safari, Opera */
-  }
-  * {
-    -ms-overflow-style: none; /* IE and Edge */
-    scrollbar-width: none; /* Firefox */
-  }
-
-  /* Accessibility: Visible focus rings for keyboard navigation */
-  *:focus-visible {
-    outline: 2px solid #F59E0B;
-    outline-offset: 2px;
-  }
-
-  input, textarea {
-    user-select: text !important; /* Allow selection in inputs */
-    font-size: 16px !important; /* Prevents iOS auto-zoom on focus */
-  }
-
-  #root {
-    height: 100%;
-    width: 100%;
-  }
-
-  /* Smooth transitions */
-  .animate-fade-in {
-    animation: fadeIn 0.3s ease-in-out;
-  }
-  @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-  }
-
-  /* Touch-friendly target sizes helper */
-  .touch-target {
-    min-width: 44px;
-    min-height: 44px;
-  }
-
-  /* Compact UI: slightly smaller root font size (Tailwind rem scale) */
-  html.compact-ui {
-    font-size: 14px;
-  }
-</style>
-</head>
-<body class="bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100 transition-colors duration-300">
-  <div id="root" role="main"></div>
-<script type="module" src="/src/main.tsx"></script>
-</body>
+      ::-webkit-scrollbar { width: 6px; height: 6px; }
+      ::-webkit-scrollbar-track { background: #FFFFFF; }
+      ::-webkit-scrollbar-thumb { background: #E2E8F0; border-radius: 3px; }
+      ::-webkit-scrollbar-thumb:hover { background: #CBD5E1; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>
