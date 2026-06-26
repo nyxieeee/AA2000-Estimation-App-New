@@ -3,7 +3,7 @@ type User = {
   id: string;
   fullName: string;
   email: string;
-  role?: 'TECHNICIAN' | 'ADMIN';
+  role?: 'TECHNICIAN' | 'ADMIN' | 'SALES';
   department?: string;
   phone?: string;
 };
@@ -55,6 +55,8 @@ type EstimationManpowerEntry = {
   headcount: number;
   hours: number;
   manDays: number;
+  dayRate?: number;
+  totalCost?: number;
 };
 
 type EstimationConsumableEntry = {

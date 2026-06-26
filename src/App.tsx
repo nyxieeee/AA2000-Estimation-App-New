@@ -17,7 +17,7 @@ export interface User {
   id: string;
   fullName: string;
   email: string;
-  role?: 'TECHNICIAN' | 'ADMIN';
+  role?: 'TECHNICIAN' | 'ADMIN' | 'SALES';
 }
 
 export interface Project {
@@ -292,6 +292,7 @@ export default function App() {
       <ErrorBoundary>
         <EstimationSummary
           project={currentProject}
+          user={user}
           onBack={() => setScreen('project-detail')}
         />
       </ErrorBoundary>

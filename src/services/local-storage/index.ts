@@ -336,6 +336,13 @@ export class LocalStorageService extends ApiClient {
           password: 'password',
         },
         {
+          id: 'sales-1',
+          fullName: 'Sales User',
+          email: 'sales@aa2000.com',
+          role: 'SALES',
+          password: 'sales123',
+        },
+        {
           id: 'admin-1',
           fullName: 'Admin User',
           email: 'admin@aa2000.com',

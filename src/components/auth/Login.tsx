@@ -40,7 +40,7 @@ export default function Login({ onLogin }: Props) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [role, setRole] = useState<'technician' | 'admin'>('technician');
+  const [role, setRole] = useState<'technician' | 'sales' | 'admin'>('technician');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -54,10 +54,10 @@ export default function Login({ onLogin }: Props) {
     await new Promise(r => setTimeout(r, 600));
     setLoading(false);
     onLogin({
-      id: role === 'admin' ? 'admin-1' : 'tech-1',
-      fullName: role === 'admin' ? 'Admin User' : 'John Technician',
-      email: email || (role === 'admin' ? 'admin@aa2000.com' : 'tech@aa2000.com'),
-      role: role === 'admin' ? 'ADMIN' : 'TECHNICIAN',
+      id: role === 'admin' ? 'admin-1' : role === 'sales' ? 'sales-1' : 'tech-1',
+      fullName: role === 'admin' ? 'Admin User' : role === 'sales' ? 'Sales User' : 'John Technician',
+      email: email || (role === 'admin' ? 'admin@aa2000.com' : role === 'sales' ? 'sales@aa2000.com' : 'tech@aa2000.com'),
+      role: role === 'admin' ? 'ADMIN' : role === 'sales' ? 'SALES' : 'TECHNICIAN',
     });
   };
 
@@ -151,7 +151,7 @@ export default function Login({ onLogin }: Props) {
           <div
             className="flex gap-1 p-1 rounded-xl mb-6 bg-slate-50 border border-slate-200"
           >
-            {(['technician', 'admin'] as const).map((r) => (
+            {(['technician', 'sales', 'admin'] as const).map((r) => (
               <button
                 key={r}
                 type="button"
@@ -159,11 +159,11 @@ export default function Login({ onLogin }: Props) {
                 className="flex-1 py-2 rounded-lg text-xs font-bold transition-all duration-200"
                 style={
                   role === r
-                    ? { background: '#1E3A8A', color: '#fff', boxShadow: '0 2px 8px rgba(30,58,138,0.2)' }
+                    ? { background: r === 'admin' ? '#1E3A8A' : r === 'sales' ? '#065F46' : '#334155', color: '#fff', boxShadow: '0 2px 8px rgba(30,58,138,0.2)' }
                     : { color: '#64748B' }
                 }
               >
-                {r === 'technician' ? 'Technician' : 'Admin / Sales'}
+                {r === 'technician' ? 'Technician' : r === 'sales' ? 'Sales' : 'Admin'}
               </button>
             ))}
           </div>
@@ -178,7 +178,7 @@ export default function Login({ onLogin }: Props) {
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                placeholder={role === 'admin' ? 'admin@aa2000.com' : 'tech@aa2000.com'}
+              placeholder={role === 'admin' ? 'admin@aa2000.com' : role === 'sales' ? 'sales@aa2000.com' : 'tech@aa2000.com'}
                 required
                 className="w-full px-4 py-3 rounded-xl text-xs font-semibold bg-slate-50 border border-slate-200 outline-none text-slate-700 focus:border-[#1E3A8A] focus:bg-white"
               />

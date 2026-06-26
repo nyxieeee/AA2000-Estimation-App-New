@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import type { Project } from '../../App';
+import type { Project, User } from '../../App';
 import type { EstimationManpowerEntry, EstimationConsumableEntry, EstimationAdditionalFeeEntry } from '../../types';
 import { analyzeFloorPlan } from '../../services/geminiFloorPlanService';
 import productsData from '../../config/products.json';
@@ -99,11 +99,20 @@ const ALWAYS_INCLUDED_SHEETS = [
 
 interface Props {
   project: Project;
+  user: User | null;
   onBack: () => void;
 }
 
+function getRoleDefaultDayRate(role: string): number {
+  const r = role.toLowerCase();
+  if (r.includes('supervisor') || r.includes('manager') || r.includes('lead') || r.includes('engineer')) {
+    return 1300;
+  }
+  return 1000;
+}
+
 function createManpower(): EstimationManpowerEntry {
-  return { id: crypto.randomUUID(), role: '', headcount: 1, hours: 8, manDays: 1 };
+  return { id: crypto.randomUUID(), role: '', headcount: 1, hours: 8, manDays: 1, dayRate: 1000, totalCost: 1000 };
 }
 
 function createConsumable(): EstimationConsumableEntry {
@@ -144,11 +153,36 @@ const AI_STEPS = [
   'Compiling materials bill-of-quantities & unit counts...',
 ];
 
-export default function EstimationSummary({ project, onBack }: Props) {
+export default function EstimationSummary({ project, user, onBack }: Props) {
+  const showPrices = !!(user && (
+    user.role === 'ADMIN' || 
+    user.role === 'SALES' || 
+    user.id.toLowerCase().includes('admin') || 
+    user.id.toLowerCase().includes('sales') ||
+    user.email?.toLowerCase().includes('admin') ||
+    user.email?.toLowerCase().includes('sales')
+  ));
+
+  const [priceTier, setPriceTier] = useState<'srp' | 'contractorPrice' | 'dealerPrice'>('srp');
   const [manpower, setManpower] = useState<EstimationManpowerEntry[]>([]);
   const [consumables, setConsumables] = useState<EstimationConsumableEntry[]>([]);
   const [fees, setFees] = useState<EstimationAdditionalFeeEntry[]>([]);
   const [constraints, setConstraints] = useState({ physical: '', electrical: '', installation: '' });
+
+  // Recalculate consumable prices when priceTier changes
+  useEffect(() => {
+    setConsumables(prev => prev.map(c => {
+      if (!c.productId) return c;
+      const matched = (productsData as any[]).find(p => p.id === c.productId);
+      if (!matched) return c;
+      const unitPrice = matched[priceTier] || 0;
+      return {
+        ...c,
+        unitPrice,
+        totalPrice: unitPrice * c.quantity
+      };
+    }));
+  }, [priceTier]);
 
   // Floor plan upload — multiple files (images + PDFs)
   const [floorPlanFiles, setFloorPlanFiles] = useState<File[]>([]);
@@ -213,6 +247,10 @@ export default function EstimationSummary({ project, onBack }: Props) {
         const hr = field === 'hours' ? Number(value) : m.hours;
         updated.manDays = Math.ceil(hc * hr / 8);
       }
+      // Re-calculate totalCost when manDays or dayRate is modified
+      const rate = field === 'dayRate' ? Number(value) : (m.dayRate || getRoleDefaultDayRate(updated.role));
+      updated.dayRate = rate;
+      updated.totalCost = rate * updated.manDays;
       return updated;
     }));
   };
@@ -220,11 +258,17 @@ export default function EstimationSummary({ project, onBack }: Props) {
   const updateConsumable = (id: string, field: keyof EstimationConsumableEntry, value: number | string) => {
     setConsumables(prev => prev.map(c => {
       if (c.id !== id) return c;
-      return { ...c, [field]: value };
+      const updated = { ...c, [field]: value };
+      if (field === 'quantity' || field === 'unitPrice') {
+        const qty = field === 'quantity' ? Number(value) : c.quantity;
+        const prc = field === 'unitPrice' ? Number(value) : c.unitPrice;
+        updated.totalPrice = qty * prc;
+      }
+      return updated;
     }));
   };
 
-  const updateFee = (id: string, field: keyof EstimationAdditionalFeeEntry, value: string) => {
+  const updateFee = (id: string, field: keyof EstimationAdditionalFeeEntry, value: string | number) => {
     setFees(prev => prev.map(f => f.id === id ? { ...f, [field]: value } : f));
   };
 
@@ -272,43 +316,37 @@ export default function EstimationSummary({ project, onBack }: Props) {
       const cctvCount = fl * 8;
 
       setManpower([
-        { id: crypto.randomUUID(), role: 'Lead Security Engineer', headcount: 1, hours: fl * 16, manDays: Math.ceil(fl * 16 / 8) },
-        { id: crypto.randomUUID(), role: 'Senior System Installer', headcount: Math.max(2, fl), hours: fl * 24, manDays: Math.ceil((Math.max(2, fl) * fl * 24) / 8) },
-        { id: crypto.randomUUID(), role: 'Safety Officer', headcount: 1, hours: fl * 8, manDays: Math.ceil(fl * 8 / 8) },
+        { id: crypto.randomUUID(), role: 'Lead Security Engineer', headcount: 1, hours: fl * 16, manDays: Math.ceil(fl * 16 / 8), dayRate: 1300, totalCost: 1300 * Math.ceil(fl * 16 / 8) },
+        { id: crypto.randomUUID(), role: 'Senior System Installer', headcount: Math.max(2, fl), hours: fl * 24, manDays: Math.ceil((Math.max(2, fl) * fl * 24) / 8), dayRate: 1000, totalCost: 1000 * Math.ceil((Math.max(2, fl) * fl * 24) / 8) },
+        { id: crypto.randomUUID(), role: 'Safety Officer', headcount: 1, hours: fl * 8, manDays: Math.ceil(fl * 8 / 8), dayRate: 1000, totalCost: 1000 * Math.ceil(fl * 8 / 8) },
       ]);
 
-      const matchDbProduct = (searchName: string, defaultName: string, defaultCategory: string, defaultUnit: string) => {
+      const matchDbProduct = (searchName: string, defaultName: string, defaultCategory: string, defaultUnit: string, quantity: number) => {
         const matched = (productsData as any[]).find(p => p.name.toLowerCase().includes(searchName.toLowerCase()));
+        const unitPrice = matched ? (matched[priceTier] || 0) : 0;
         return {
           id: crypto.randomUUID(),
           name: matched ? matched.name : defaultName,
           category: matched ? mapCategoryToOption(matched.category) : defaultCategory,
-          quantity: 1,
+          quantity,
           unit: defaultUnit,
-          unitPrice: 0,
-          totalPrice: 0,
+          unitPrice,
+          totalPrice: unitPrice * quantity,
           productId: matched?.id,
         };
       };
 
-      const domeCam = matchDbProduct('Dome Camera', `${bt} Grade IP Dome Camera`, 'Hardware', 'pcs');
-      const nvr = matchDbProduct('NVR', 'NVR 32-Channel Smart Storage', 'Hardware', 'pcs');
-      const cable = matchDbProduct('UTP Cable', 'Cat6 UTP Cable', 'Wires & Cables', 'meters');
-      const networkSwitch = matchDbProduct('Switch 16-Port', 'Gigabit PoE Network Switch 16-Port', 'Hardware', 'pcs');
-      const rack = matchDbProduct('Rack 9U', 'Wall-Mount Equipment Rack 9U', 'Hardware', 'pcs');
-      const rj45 = matchDbProduct('RJ45', 'RJ45 Connectors', 'Mounting Hardware', 'pcs');
-
-      domeCam.quantity = cctvCount;
-      nvr.quantity = Math.ceil(fl / 2);
-      cable.quantity = cctvCount * 50;
-      networkSwitch.quantity = fl;
-      rack.quantity = 1;
-      rj45.quantity = cctvCount * 2;
+      const domeCam = matchDbProduct('Dome Camera', `${bt} Grade IP Dome Camera`, 'Hardware', 'pcs', cctvCount);
+      const nvr = matchDbProduct('NVR', 'NVR 32-Channel Smart Storage', 'Hardware', 'pcs', Math.ceil(fl / 2));
+      const cable = matchDbProduct('UTP Cable', 'Cat6 UTP Cable', 'Wires & Cables', 'meters', cctvCount * 50);
+      const networkSwitch = matchDbProduct('Switch 16-Port', 'Gigabit PoE Network Switch 16-Port', 'Hardware', 'pcs', fl);
+      const rack = matchDbProduct('Rack 9U', 'Wall-Mount Equipment Rack 9U', 'Hardware', 'pcs', 1);
+      const rj45 = matchDbProduct('RJ45', 'RJ45 Connectors', 'Mounting Hardware', 'pcs', cctvCount * 2);
 
       setConsumables([domeCam, nvr, cable, networkSwitch, rack, rj45]);
       setFees([
-        { id: crypto.randomUUID(), type: 'Travel Fee', amount: 0, description: 'Mobilization & logistics from Manila HQ to site' },
-        { id: crypto.randomUUID(), type: 'Other', amount: 0, description: 'System testing, calibration & certification' },
+        { id: crypto.randomUUID(), type: 'Travel Fee', amount: 7500, description: 'Mobilization & logistics from Manila HQ to site' },
+        { id: crypto.randomUUID(), type: 'Other', amount: 3500, description: 'System testing, calibration & certification' },
       ]);
       setConstraints({
         physical: `Wall types include concrete blocks and drywall partitions. Ceiling heights average 3.2m (${fl} floor${fl > 1 ? 's' : ''}).`,
@@ -318,7 +356,7 @@ export default function EstimationSummary({ project, onBack }: Props) {
 
       setTimeout(() => setIsAiEstimating(false), 600);
     }
-  }, [isAiEstimating, aiStep, aiMode]);
+  }, [isAiEstimating, aiStep, aiMode, priceTier]);
 
   // Real AI estimation runner
   const runAiEstimation = async () => {
@@ -359,13 +397,18 @@ export default function EstimationSummary({ project, onBack }: Props) {
         setAiStep(AI_STEPS.length);
 
         setManpower(
-          result.manpower.map(m => ({
-            id: crypto.randomUUID(),
-            role: m.role,
-            headcount: m.headcount,
-            hours: m.hours,
-            manDays: m.manDays,
-          }))
+          result.manpower.map(m => {
+            const dayRate = getRoleDefaultDayRate(m.role);
+            return {
+              id: crypto.randomUUID(),
+              role: m.role,
+              headcount: m.headcount,
+              hours: m.hours,
+              manDays: m.manDays,
+              dayRate,
+              totalCost: dayRate * m.manDays,
+            };
+          })
         );
         setConsumables(
           result.consumables.map(c => {
@@ -374,14 +417,15 @@ export default function EstimationSummary({ project, onBack }: Props) {
               c.name.toLowerCase().includes(p.name.toLowerCase()) ||
               (p.model && c.name.toLowerCase().includes(p.model.toLowerCase()))
             );
+            const unitPrice = matched ? (matched[priceTier] || 0) : 0;
             return {
               id: crypto.randomUUID(),
               name: matched ? matched.name : c.name,
               category: matched ? mapCategoryToOption(matched.category) : c.category,
               quantity: c.quantity,
               unit: c.unit || 'pcs',
-              unitPrice: 0,
-              totalPrice: 0,
+              unitPrice,
+              totalPrice: unitPrice * c.quantity,
               productId: matched?.id,
             };
           })
@@ -390,7 +434,7 @@ export default function EstimationSummary({ project, onBack }: Props) {
           result.fees.map(f => ({
             id: crypto.randomUUID(),
             type: f.type as EstimationAdditionalFeeEntry['type'],
-            amount: 0,
+            amount: f.amount || 0,
             description: f.description,
           }))
         );
@@ -690,7 +734,10 @@ export default function EstimationSummary({ project, onBack }: Props) {
             <table className="w-full">
               <thead>
                 <tr>
-                  {['Role Position', 'Headcount', 'Hours / Person', 'Man-Days', ''].map(h => (
+                  {(showPrices 
+                    ? ['Role Position', 'Headcount', 'Hours / Person', 'Man-Days', 'Day Rate (₱)', 'Total Labor (₱)', '']
+                    : ['Role Position', 'Headcount', 'Hours / Person', 'Man-Days', '']
+                  ).map(h => (
                     <th key={h} style={tableHeadStyle}>{h}</th>
                   ))}
                 </tr>
@@ -713,11 +760,22 @@ export default function EstimationSummary({ project, onBack }: Props) {
                     <td className="py-2.5 pr-2">
                       <span className="text-xs font-black text-slate-700 px-2 py-1 rounded-lg bg-blue-50">{m.manDays} days</span>
                     </td>
+                    {showPrices && (
+                      <>
+                        <td className="py-2.5 pr-2">
+                          <input type="number" min={0} value={m.dayRate ?? getRoleDefaultDayRate(m.role)} onChange={e => updateManpower(m.id, 'dayRate', Number(e.target.value))}
+                            style={{ ...inputStyle, width: '90px' }} />
+                        </td>
+                        <td className="py-2.5 pr-2">
+                          <span className="text-xs font-black text-slate-700">₱{((m.totalCost ?? (m.dayRate ?? getRoleDefaultDayRate(m.role)) * m.manDays)).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        </td>
+                      </>
+                    )}
                     <td className="py-2.5">{removeBtn(() => setManpower(prev => prev.filter(x => x.id !== m.id)))}</td>
                   </tr>
                 ))}
                 {manpower.length === 0 && (
-                  <tr><td colSpan={5} className="py-8 text-center text-xs text-slate-400 font-semibold">
+                  <tr><td colSpan={showPrices ? 7 : 5} className="py-8 text-center text-xs text-slate-400 font-semibold">
                     Upload a floor plan and click "ANALYZE FLOOR PLAN", or click "AI ESTIMATE SCAN" to simulate, or add rows manually.
                   </td></tr>
                 )}
@@ -734,13 +792,35 @@ export default function EstimationSummary({ project, onBack }: Props) {
               <h2 className="text-sm font-black text-slate-800 uppercase tracking-tight">Materials & Consumables</h2>
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-100">Bill of Quantities</span>
             </div>
-            {addBtn('Add Item', () => setConsumables(prev => [...prev, createConsumable()]))}
+            <div className="flex items-center gap-3">
+              {showPrices && (
+                <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-xl p-1">
+                  {(['srp', 'contractorPrice', 'dealerPrice'] as const).map(tier => (
+                    <button
+                      key={tier}
+                      onClick={() => setPriceTier(tier)}
+                      className="px-3 py-1 rounded-lg text-[10px] font-black transition-all"
+                      style={{
+                        background: priceTier === tier ? '#1E3A8A' : 'transparent',
+                        color: priceTier === tier ? '#FFFFFF' : '#94A3B8',
+                      }}
+                    >
+                      {tier === 'srp' ? 'SRP' : tier === 'contractorPrice' ? 'Contractor' : 'Dealer'}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {addBtn('Add Item', () => setConsumables(prev => [...prev, createConsumable()]))}
+            </div>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr>
-                  {['Item / Model Name', 'Category', 'Qty', 'Unit', 'Notes', ''].map(h => (
+                  {(showPrices
+                    ? ['Item / Model Name', 'Category', 'Qty', 'Unit', 'Unit Price (₱)', 'Total Price (₱)', 'Notes', '']
+                    : ['Item / Model Name', 'Category', 'Qty', 'Unit', 'Notes', '']
+                  ).map(h => (
                     <th key={h} style={tableHeadStyle}>{h}</th>
                   ))}
                 </tr>
@@ -874,6 +954,19 @@ export default function EstimationSummary({ project, onBack }: Props) {
                       <input value={c.unit || 'pcs'} onChange={e => updateConsumable(c.id, 'unit', e.target.value)} placeholder="pcs"
                         style={{ ...inputStyle, width: '70px' }} />
                     </td>
+                    {showPrices && (
+                      <>
+                        <td className="py-2.5 pr-2">
+                          <input type="number" min={0} value={c.unitPrice || 0} onChange={e => updateConsumable(c.id, 'unitPrice', Number(e.target.value))}
+                            style={{ ...inputStyle, width: '100px' }} />
+                        </td>
+                        <td className="py-2.5 pr-2">
+                          <span className="text-xs font-black text-slate-700">
+                            ₱{(c.totalPrice || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                        </td>
+                      </>
+                    )}
                     <td className="py-2.5 pr-2">
                       <input value={c.notes || ''} onChange={e => updateConsumable(c.id, 'notes', e.target.value)} placeholder="Optional note..."
                         style={{ ...inputStyle, width: '140px', fontSize: '11px' }} />
@@ -882,8 +975,56 @@ export default function EstimationSummary({ project, onBack }: Props) {
                   </tr>
                 ))}
                 {consumables.length === 0 && (
-                  <tr><td colSpan={6} className="py-8 text-center text-xs text-slate-400 font-semibold">No materials added yet.</td></tr>
+                  <tr><td colSpan={showPrices ? 8 : 6} className="py-8 text-center text-xs text-slate-400 font-semibold">No materials added yet.</td></tr>
                 )}
+                {showPrices && consumables.length > 0 && (() => {
+                  const totalLabor = manpower.reduce((sum, m) => sum + (m.totalCost ?? 0), 0);
+                  const totalMaterials = consumables.reduce((sum, c) => sum + (c.totalPrice || 0), 0);
+                  const totalFees = fees.reduce((sum, f) => sum + (f.amount || 0), 0);
+                  const grandTotal = totalLabor + totalMaterials + totalFees;
+                  return (
+                    <>
+                      <tr>
+                        <td colSpan={5} className="pt-4 pb-1">
+                          <div className="border-t border-slate-200" />
+                        </td>
+                        <td colSpan={3} className="pt-4 pb-1" />
+                      </tr>
+                      <tr>
+                        <td colSpan={5} className="py-1 text-right text-[10px] font-black uppercase tracking-wider text-slate-400 pr-3">Materials Subtotal</td>
+                        <td className="py-1 text-xs font-black text-amber-700">
+                          ₱{totalMaterials.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </td>
+                        <td colSpan={2} />
+                      </tr>
+                      <tr>
+                        <td colSpan={5} className="py-1 text-right text-[10px] font-black uppercase tracking-wider text-slate-400 pr-3">Labor Subtotal</td>
+                        <td className="py-1 text-xs font-black text-blue-700">
+                          ₱{totalLabor.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </td>
+                        <td colSpan={2} />
+                      </tr>
+                      {totalFees > 0 && (
+                        <tr>
+                          <td colSpan={5} className="py-1 text-right text-[10px] font-black uppercase tracking-wider text-slate-400 pr-3">Fees Subtotal</td>
+                          <td className="py-1 text-xs font-black text-rose-700">
+                            ₱{totalFees.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </td>
+                          <td colSpan={2} />
+                        </tr>
+                      )}
+                      <tr>
+                        <td colSpan={5} className="pt-2 pb-3 text-right text-xs font-black uppercase tracking-wider text-slate-700 pr-3">GRAND TOTAL</td>
+                        <td className="pt-2 pb-3">
+                          <span className="text-sm font-black px-3 py-1 rounded-lg" style={{ background: '#EFF6FF', color: '#1E3A8A' }}>
+                            ₱{grandTotal.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                        </td>
+                        <td colSpan={2} />
+                      </tr>
+                    </>
+                  );
+                })()}
               </tbody>
             </table>
           </div>
@@ -902,7 +1043,10 @@ export default function EstimationSummary({ project, onBack }: Props) {
             <table className="w-full">
               <thead>
                 <tr>
-                  {['Requirement Type', 'Description', ''].map(h => (
+                  {(showPrices
+                    ? ['Requirement Type', 'Description', 'Amount (₱)', '']
+                    : ['Requirement Type', 'Description', '']
+                  ).map(h => (
                     <th key={h} style={tableHeadStyle}>{h}</th>
                   ))}
                 </tr>
@@ -927,11 +1071,17 @@ export default function EstimationSummary({ project, onBack }: Props) {
                         placeholder="Describe the requirement..."
                         style={{ ...inputStyle, width: '340px' }} />
                     </td>
+                    {showPrices && (
+                      <td className="py-2.5 pr-2">
+                        <input type="number" min={0} value={f.amount || 0} onChange={e => updateFee(f.id, 'amount', Number(e.target.value))}
+                          style={{ ...inputStyle, width: '120px' }} />
+                      </td>
+                    )}
                     <td className="py-2.5">{removeBtn(() => setFees(prev => prev.filter(x => x.id !== f.id)))}</td>
                   </tr>
                 ))}
                 {fees.length === 0 && (
-                  <tr><td colSpan={3} className="py-8 text-center text-xs text-slate-400 font-semibold">No logistics requirements added yet.</td></tr>
+                  <tr><td colSpan={showPrices ? 4 : 3} className="py-8 text-center text-xs text-slate-400 font-semibold">No logistics requirements added yet.</td></tr>
                 )}
               </tbody>
             </table>
