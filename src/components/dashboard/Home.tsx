@@ -91,15 +91,19 @@ export default function Home({ user, projects, onSelectProject, onSelectCompany,
     if (isAdmin || isSales) {
       return companyFoldersOnly;
     }
-    // For technician, show company folders they have projects in
+    // For technician, show company folders they have projects in, OR company folders they are directly assigned to
     return companyFoldersOnly.filter(
       compFolder => {
-        return projectList.some(
+        const isAssignedToFolder = compFolder.assignedTechnicians?.some(t => t.id === user.id) || compFolder.technicianName === user.fullName;
+        
+        const hasAssignedProjects = projectList.some(
           p => 
             p.buildingType !== 'Other' &&
             p.clientName === compFolder.name &&
             (p.assignedTechnicians?.some(t => t.id === user.id) || p.technicianName === user.fullName)
         );
+
+        return isAssignedToFolder || hasAssignedProjects;
       }
     );
   }, [projectList, user, isAdmin, isSales]);
@@ -191,13 +195,13 @@ export default function Home({ user, projects, onSelectProject, onSelectCompany,
         <div className="absolute right-0 bottom-0 w-80 h-80 rounded-full bg-blue-400 opacity-20 blur-3xl pointer-events-none translate-x-20 translate-y-20" />
       </div>
 
-      {/* Company List Table Component */}
+      {/* Project/Survey List Table Component */}
       <div className="bg-white rounded-3xl p-6 shadow-sm">
         {/* Controls row */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pb-5">
           <div className="flex items-center gap-3">
             <span className="text-sm font-black text-slate-800 uppercase tracking-tight">
-              Company
+              ALL COMPANIES
             </span>
             <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
               {ordered.length}
@@ -214,7 +218,7 @@ export default function Home({ user, projects, onSelectProject, onSelectCompany,
                 type="text"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                placeholder="Search Company..."
+                placeholder="Search Companies..."
                 className="w-full pl-9 pr-4 py-2 rounded-xl text-xs bg-slate-50 border border-slate-200 text-slate-700 outline-none focus:border-[#1E3A8A] focus:bg-white"
               />
             </div>
@@ -231,20 +235,21 @@ export default function Home({ user, projects, onSelectProject, onSelectCompany,
               <option value="name-desc">Name Z–A</option>
             </select>
 
-            {/* New Company Button */}
+            {/* New Project/Survey Button */}
             {isAdmin && (
               <button
                 onClick={onNewCompanyClick}
                 className="px-4 py-2 rounded-xl text-xs font-bold text-white hover:opacity-90 transition-all shadow-sm shrink-0"
                 style={{ background: '#1E3A8A' }}
               >
-                + New Company
+                + New Companies
               </button>
             )}
           </div>
         </div>
 
         {/* Table */}
+        {/* Empty state */}
         <div>
           {ordered.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 gap-3">
@@ -308,16 +313,16 @@ export default function Home({ user, projects, onSelectProject, onSelectCompany,
                               onClick={() => { setEditProject(project); setMenuOpen(null); }}
                               className="w-full px-3 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-[#1E3A8A] flex items-center gap-1.5"
                             >
-                              Edit Company
+                              Edit Project
                             </button>
                             <button
                               onClick={() => handlePin(project.id)}
                               className="w-full px-3 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-[#1E3A8A] flex items-center gap-1.5"
                             >
-                              {isPinned ? 'Unpin' : 'Pin Company'}
+                              {isPinned ? 'Unpin' : 'Pin Project'}
                             </button>
                             <button
-                              onClick={() => onSelectProject(project)}
+                              onClick={() => onSelectCompany(project.name)}
                               className="w-full px-3 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-[#1E3A8A] flex items-center gap-1.5"
                             >
                               View Details
@@ -327,7 +332,7 @@ export default function Home({ user, projects, onSelectProject, onSelectCompany,
                               onClick={() => { setDeleteConfirm(project.id); setMenuOpen(null); }}
                               className="w-full px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50 flex items-center gap-1.5"
                             >
-                              Delete Company
+                              Delete Project
                             </button>
                           </div>
                         </>
@@ -341,12 +346,12 @@ export default function Home({ user, projects, onSelectProject, onSelectCompany,
         </div>
       </div>
 
-      {/* Edit Company Modal */}
+      {/* Edit Project/Survey Modal */}
       {editProject && (
         <EditCompanyModal project={editProject} onClose={() => setEditProject(null)} onSave={handleSaveEdit} />
       )}
 
-      {/* Delete Company Confirmation Modal */}
+      {/* Delete Project/Survey Confirmation Modal */}
       {deleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
           <div className="w-full max-w-sm p-6 rounded-3xl bg-white shadow-xl border border-slate-100 text-center">
@@ -355,7 +360,7 @@ export default function Home({ user, projects, onSelectProject, onSelectCompany,
                 <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
               </svg>
             </div>
-            <h3 className="font-black text-slate-800 text-lg mb-1">Delete Company?</h3>
+            <h3 className="font-black text-slate-800 text-lg mb-1">Delete Project/Survey?</h3>
             <p className="text-xs text-slate-400 mb-5">This action cannot be undone.</p>
             <div className="flex gap-2">
               <button
@@ -411,7 +416,7 @@ function EditCompanyModal({ project, onClose, onSave }: { project: Project; onCl
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
       <div className="w-full max-w-lg bg-white rounded-3xl border border-slate-100 shadow-xl overflow-hidden">
         <div className="flex items-center justify-between p-5 border-b border-slate-100">
-          <h2 className="text-base font-black text-slate-800">Edit Company</h2>
+          <h2 className="text-base font-black text-slate-800">Edit Project/Survey</h2>
           <button onClick={onClose} className="p-1 rounded-lg text-slate-400 hover:text-slate-600 transition-colors">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
@@ -425,7 +430,7 @@ function EditCompanyModal({ project, onClose, onSave }: { project: Project; onCl
           className="p-5 space-y-4"
         >
           <div>
-            <label style={labelStyle}>Company Name</label>
+            <label style={labelStyle}>Project Name</label>
             <input value={name} onChange={e => setName(e.target.value)} style={inputStyle} required />
           </div>
           <div>

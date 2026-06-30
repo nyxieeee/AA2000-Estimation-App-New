@@ -303,6 +303,133 @@ export default function EstimationSummary({ project, user, onBack }: Props) {
     });
   };
 
+  const runEstimateFromSurveys = (surveysList: any[]) => {
+    const matchDbProduct = (searchName: string, defaultName: string, defaultCategory: string, defaultUnit: string, quantity: number) => {
+      const matched = (productsData as any[]).find(p => p.name.toLowerCase().includes(searchName.toLowerCase()));
+      const unitPrice = matched ? (matched[priceTier] || 0) : 0;
+      return {
+        id: crypto.randomUUID(),
+        name: matched ? matched.name : defaultName,
+        category: matched ? mapCategoryToOption(matched.category) : defaultCategory,
+        quantity,
+        unit: defaultUnit,
+        unitPrice,
+        totalPrice: unitPrice * quantity,
+        productId: matched?.id,
+      };
+    };
+
+    let totalItemsCount = 0;
+    const items: EstimationConsumableEntry[] = [];
+    const constraintsList: string[] = [];
+
+    surveysList.forEach(s => {
+      if (s.type === 'CCTV') {
+        const cameraCount = Number(s.data.cameraCount) || 8;
+        const cableLength = Number(s.data.cableLength) || (cameraCount * 45);
+        totalItemsCount += cameraCount + 2;
+
+        items.push(matchDbProduct('Dome Camera', 'IP Dome Camera', 'Hardware', 'pcs', Math.ceil(cameraCount / 2)));
+        items.push(matchDbProduct('Bullet Camera', 'IP Bullet Camera', 'Hardware', 'pcs', Math.floor(cameraCount / 2)));
+        items.push(matchDbProduct('NVR', 'Network Video Recorder (NVR)', 'Hardware', 'pcs', 1));
+        items.push(matchDbProduct(s.data.cableType || 'UTP Cable', 'Cat6 UTP Cable', 'Wires & Cables', 'meters', cableLength));
+        items.push(matchDbProduct('Switch', 'PoE Switch', 'Hardware', 'pcs', Math.ceil(cameraCount / 8)));
+        items.push(matchDbProduct('RJ45', 'RJ45 Connectors', 'Mounting Hardware', 'pcs', cameraCount * 2));
+        
+        if (s.data.buildingType) {
+          constraintsList.push(`Building: ${s.data.buildingType} (${s.data.floors || 1} floors).`);
+        }
+        if (s.data.coreDrilling) {
+          constraintsList.push('Core drilling required for cable paths.');
+        }
+      } else if (s.type === 'FIRE_ALARM') {
+        const smoke = Number(s.data.smokeDetectors) || 0;
+        const heat = Number(s.data.heatDetectors) || 0;
+        const mcp = Number(s.data.mcpCount) || 0;
+        const sounders = Number(s.data.sounders) || 0;
+        totalItemsCount += smoke + heat + mcp + sounders + 1;
+
+        if (smoke > 0) items.push(matchDbProduct('Smoke Detector', 'Smoke Detector', 'Hardware', 'pcs', smoke));
+        if (heat > 0) items.push(matchDbProduct('Heat Detector', 'Heat Detector', 'Hardware', 'pcs', heat));
+        if (mcp > 0) items.push(matchDbProduct('Manual Call Point', 'Manual Call Point', 'Hardware', 'pcs', mcp));
+        if (sounders > 0) items.push(matchDbProduct('Sounder', 'Fire Alarm Sounder', 'Hardware', 'pcs', sounders));
+        items.push(matchDbProduct('Control Panel', 'FDAS Control Panel', 'Hardware', 'pcs', 1));
+        items.push(matchDbProduct('Fire Resistant Cable', 'Fire Resistant Cable', 'Wires & Cables', 'meters', (smoke + heat + mcp + sounders) * 20));
+      } else if (s.type === 'ACCESS_CONTROL') {
+        const doors = Number(s.data.doorCount) || 0;
+        totalItemsCount += doors * 2 + 1;
+
+        if (doors > 0) {
+          items.push(matchDbProduct(s.data.readerType || 'Reader', 'Access Control Reader', 'Hardware', 'pcs', doors));
+          items.push(matchDbProduct(s.data.lockType || 'Lock', 'Access Control Lock', 'Hardware', 'pcs', doors));
+          items.push(matchDbProduct('Exit Button', 'Request-to-Exit Button', 'Hardware', 'pcs', doors));
+          items.push(matchDbProduct('Power Supply', 'Access Control Power Supply', 'Hardware', 'pcs', Math.ceil(doors / 2)));
+        }
+        items.push(matchDbProduct('Control Panel', 'Access Control Controller', 'Hardware', 'pcs', Math.ceil(doors / 4)));
+      } else if (s.type === 'BURGLAR_ALARM') {
+        const pir = Number(s.data.pirSensors) || 0;
+        const contact = Number(s.data.doorContacts) || 0;
+        const glass = Number(s.data.glassBreak) || 0;
+        const outdoor = Number(s.data.outdoorSensors) || 0;
+        totalItemsCount += pir + contact + glass + outdoor + 1;
+
+        if (pir > 0) items.push(matchDbProduct('PIR', 'PIR Motion Sensor', 'Hardware', 'pcs', pir));
+        if (contact > 0) items.push(matchDbProduct('Contact', 'Magnetic Door Contact', 'Hardware', 'pcs', contact));
+        if (glass > 0) items.push(matchDbProduct('Glass', 'Glass Break Detector', 'Hardware', 'pcs', glass));
+        if (outdoor > 0) items.push(matchDbProduct('Sensor', 'Outdoor Alarm Sensor', 'Hardware', 'pcs', outdoor));
+        items.push(matchDbProduct('Control Panel', 'Burglar Alarm Control Panel', 'Hardware', 'pcs', 1));
+        items.push(matchDbProduct('Cable', 'Alarm Cabling', 'Wires & Cables', 'meters', (pir + contact + glass + outdoor) * 25));
+      } else if (s.type === 'FIRE_PROTECTION') {
+        const zones = Number(s.data.zones) || 1;
+        const cylinders = Number(s.data.cylinders) || 1;
+        totalItemsCount += cylinders + zones;
+
+        items.push(matchDbProduct(s.data.suppressionType || 'Extinguisher', 'Suppression Cylinder', 'Hardware', 'pcs', cylinders));
+        items.push(matchDbProduct('Valve', 'Zone Control Valve', 'Hardware', 'pcs', zones));
+      } else if (s.type === 'OTHER') {
+        const qty = Number(s.data.quantity) || 1;
+        totalItemsCount += qty;
+
+        items.push(matchDbProduct(s.data.otherSystemType || 'Other', s.data.description || 'Custom Security Hardware', 'Hardware', 'pcs', qty));
+      }
+    });
+
+    const hoursRequired = Math.max(16, totalItemsCount * 3);
+    const leadDays = Math.ceil(hoursRequired * 0.1 / 8);
+    const installerDays = Math.ceil(hoursRequired / 8);
+    const safetyDays = Math.ceil(hoursRequired * 0.05 / 8);
+
+    setManpower([
+      { id: crypto.randomUUID(), role: 'Lead Security Engineer', headcount: 1, hours: leadDays * 8, manDays: leadDays, dayRate: 1300, totalCost: 1300 * leadDays },
+      { id: crypto.randomUUID(), role: 'Senior System Installer', headcount: Math.max(1, Math.ceil(installerDays / 5)), hours: installerDays * 8, manDays: installerDays, dayRate: 1000, totalCost: 1000 * installerDays },
+      { id: crypto.randomUUID(), role: 'Safety Officer', headcount: 1, hours: safetyDays * 8, manDays: safetyDays, dayRate: 1000, totalCost: 1000 * safetyDays },
+    ]);
+
+    setConsumables(items.filter(item => item.name !== ''));
+    setFees([
+      { id: crypto.randomUUID(), type: 'Travel Fee', amount: 7500, description: 'Mobilization & logistics from Manila HQ to site' },
+      { id: crypto.randomUUID(), type: 'Other', amount: 3500, description: 'System testing, calibration & certification' },
+    ]);
+
+    setConstraints({
+      physical: constraintsList.join(' ') || 'Standard layout. Wall structures include concrete block and drywall.',
+      electrical: 'Centralized UPS required at server rack location.',
+      installation: 'Noisy work (drilling/coring) must be scheduled after office hours.',
+    });
+  };
+
+  // Load initial estimate or pre-fill from completed surveys if available
+  useEffect(() => {
+    if (manpower.length === 0 && consumables.length === 0) {
+      const projectSurveys = JSON.parse(localStorage.getItem('aa2000_surveys') || '[]')
+        .filter((s: any) => s.projectId === project.id);
+      
+      if (projectSurveys.length > 0) {
+        runEstimateFromSurveys(projectSurveys);
+      }
+    }
+  }, [project.id]);
+
   // Step animation for simulated AI
   useEffect(() => {
     if (!isAiEstimating || aiMode === 'real') return;
@@ -310,53 +437,60 @@ export default function EstimationSummary({ project, user, onBack }: Props) {
       const timer = setTimeout(() => setAiStep(prev => prev + 1), 700);
       return () => clearTimeout(timer);
     } else {
-      // Simulation complete — populate based on floors/building type
-      const fl = project.floors || 1;
-      const bt = project.buildingType || 'Office';
-      const cctvCount = fl * 8;
+      const projectSurveys = JSON.parse(localStorage.getItem('aa2000_surveys') || '[]')
+        .filter((s: any) => s.projectId === project.id);
+      
+      if (projectSurveys.length > 0) {
+        runEstimateFromSurveys(projectSurveys);
+      } else {
+        // Simulation complete — populate based on floors/building type
+        const fl = project.floors || 1;
+        const bt = project.buildingType || 'Office';
+        const cctvCount = fl * 8;
 
-      setManpower([
-        { id: crypto.randomUUID(), role: 'Lead Security Engineer', headcount: 1, hours: fl * 16, manDays: Math.ceil(fl * 16 / 8), dayRate: 1300, totalCost: 1300 * Math.ceil(fl * 16 / 8) },
-        { id: crypto.randomUUID(), role: 'Senior System Installer', headcount: Math.max(2, fl), hours: fl * 24, manDays: Math.ceil((Math.max(2, fl) * fl * 24) / 8), dayRate: 1000, totalCost: 1000 * Math.ceil((Math.max(2, fl) * fl * 24) / 8) },
-        { id: crypto.randomUUID(), role: 'Safety Officer', headcount: 1, hours: fl * 8, manDays: Math.ceil(fl * 8 / 8), dayRate: 1000, totalCost: 1000 * Math.ceil(fl * 8 / 8) },
-      ]);
+        setManpower([
+          { id: crypto.randomUUID(), role: 'Lead Security Engineer', headcount: 1, hours: fl * 16, manDays: Math.ceil(fl * 16 / 8), dayRate: 1300, totalCost: 1300 * Math.ceil(fl * 16 / 8) },
+          { id: crypto.randomUUID(), role: 'Senior System Installer', headcount: Math.max(2, fl), hours: fl * 24, manDays: Math.ceil((Math.max(2, fl) * fl * 24) / 8), dayRate: 1000, totalCost: 1000 * Math.ceil((Math.max(2, fl) * fl * 24) / 8) },
+          { id: crypto.randomUUID(), role: 'Safety Officer', headcount: 1, hours: fl * 8, manDays: Math.ceil(fl * 8 / 8), dayRate: 1000, totalCost: 1000 * Math.ceil(fl * 8 / 8) },
+        ]);
 
-      const matchDbProduct = (searchName: string, defaultName: string, defaultCategory: string, defaultUnit: string, quantity: number) => {
-        const matched = (productsData as any[]).find(p => p.name.toLowerCase().includes(searchName.toLowerCase()));
-        const unitPrice = matched ? (matched[priceTier] || 0) : 0;
-        return {
-          id: crypto.randomUUID(),
-          name: matched ? matched.name : defaultName,
-          category: matched ? mapCategoryToOption(matched.category) : defaultCategory,
-          quantity,
-          unit: defaultUnit,
-          unitPrice,
-          totalPrice: unitPrice * quantity,
-          productId: matched?.id,
+        const matchDbProduct = (searchName: string, defaultName: string, defaultCategory: string, defaultUnit: string, quantity: number) => {
+          const matched = (productsData as any[]).find(p => p.name.toLowerCase().includes(searchName.toLowerCase()));
+          const unitPrice = matched ? (matched[priceTier] || 0) : 0;
+          return {
+            id: crypto.randomUUID(),
+            name: matched ? matched.name : defaultName,
+            category: matched ? mapCategoryToOption(matched.category) : defaultCategory,
+            quantity,
+            unit: defaultUnit,
+            unitPrice,
+            totalPrice: unitPrice * quantity,
+            productId: matched?.id,
+          };
         };
-      };
 
-      const domeCam = matchDbProduct('Dome Camera', `${bt} Grade IP Dome Camera`, 'Hardware', 'pcs', cctvCount);
-      const nvr = matchDbProduct('NVR', 'NVR 32-Channel Smart Storage', 'Hardware', 'pcs', Math.ceil(fl / 2));
-      const cable = matchDbProduct('UTP Cable', 'Cat6 UTP Cable', 'Wires & Cables', 'meters', cctvCount * 50);
-      const networkSwitch = matchDbProduct('Switch 16-Port', 'Gigabit PoE Network Switch 16-Port', 'Hardware', 'pcs', fl);
-      const rack = matchDbProduct('Rack 9U', 'Wall-Mount Equipment Rack 9U', 'Hardware', 'pcs', 1);
-      const rj45 = matchDbProduct('RJ45', 'RJ45 Connectors', 'Mounting Hardware', 'pcs', cctvCount * 2);
+        const domeCam = matchDbProduct('Dome Camera', `${bt} Grade IP Dome Camera`, 'Hardware', 'pcs', cctvCount);
+        const nvr = matchDbProduct('NVR', 'NVR 32-Channel Smart Storage', 'Hardware', 'pcs', Math.ceil(fl / 2));
+        const cable = matchDbProduct('UTP Cable', 'Cat6 UTP Cable', 'Wires & Cables', 'meters', cctvCount * 50);
+        const networkSwitch = matchDbProduct('Switch 16-Port', 'Gigabit PoE Network Switch 16-Port', 'Hardware', 'pcs', fl);
+        const rack = matchDbProduct('Rack 9U', 'Wall-Mount Equipment Rack 9U', 'Hardware', 'pcs', 1);
+        const rj45 = matchDbProduct('RJ45', 'RJ45 Connectors', 'Mounting Hardware', 'pcs', cctvCount * 2);
 
-      setConsumables([domeCam, nvr, cable, networkSwitch, rack, rj45]);
-      setFees([
-        { id: crypto.randomUUID(), type: 'Travel Fee', amount: 7500, description: 'Mobilization & logistics from Manila HQ to site' },
-        { id: crypto.randomUUID(), type: 'Other', amount: 3500, description: 'System testing, calibration & certification' },
-      ]);
-      setConstraints({
-        physical: `Wall types include concrete blocks and drywall partitions. Ceiling heights average 3.2m (${fl} floor${fl > 1 ? 's' : ''}).`,
-        electrical: 'Centralized UPS required at server rack. Isolated grounding wire must route to main electrical room.',
-        installation: 'Working hours: 8:00 PM – 5:00 AM night shift to avoid disruption to daily operations.',
-      });
+        setConsumables([domeCam, nvr, cable, networkSwitch, rack, rj45]);
+        setFees([
+          { id: crypto.randomUUID(), type: 'Travel Fee', amount: 7500, description: 'Mobilization & logistics from Manila HQ to site' },
+          { id: crypto.randomUUID(), type: 'Other', amount: 3500, description: 'System testing, calibration & certification' },
+        ]);
+        setConstraints({
+          physical: `Wall types include concrete blocks and drywall partitions. Ceiling heights average 3.2m (${fl} floor${fl > 1 ? 's' : ''}).`,
+          electrical: 'Centralized UPS required at server rack. Isolated grounding wire must route to main electrical room.',
+          installation: 'Working hours: 8:00 PM – 5:00 AM night shift to avoid disruption to daily operations.',
+        });
+      }
 
       setTimeout(() => setIsAiEstimating(false), 600);
     }
-  }, [isAiEstimating, aiStep, aiMode, priceTier]);
+  }, [isAiEstimating, aiStep, aiMode, priceTier, project.id]);
 
   // Real AI estimation runner
   const runAiEstimation = async () => {

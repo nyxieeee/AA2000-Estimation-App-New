@@ -8,19 +8,22 @@ interface Props {
   onBack: () => void;
   onSelectProject: (project: Project) => void;
   onNewSurvey: (companyName: string) => void;
+  onDeleteProject?: (id: string) => void;
 }
 
 const statusConfig: Record<string, { color: string; bg: string; bar: string }> = {
   'In Progress': { color: '#2563EB', bg: 'rgba(37,99,235,0.08)', bar: '#2563EB' },
   'Pending': { color: '#1E3A8A', bg: 'rgba(30,58,138,0.08)', bar: '#1E3A8A' },
   'Completed': { color: '#059669', bg: 'rgba(5,150,105,0.08)', bar: '#059669' },
-  'Finalized': { color: '#059669', bg: 'rgba(5,150,105,0.08)', bar: '#059669' },
+  'Finalized - Approved': { color: '#059669', bg: 'rgba(5,150,105,0.08)', bar: '#059669' },
+  'Finalized - Rejected': { color: '#DC2626', bg: 'rgba(220,38,38,0.08)', bar: '#DC2626' },
+  'Finalized': { color: '#7C3AED', bg: 'rgba(124,58,237,0.08)', bar: '#7C3AED' },
 };
 
 function StatusBadge({ status, isMissing }: { status: string; isMissing?: boolean }) {
   const cfg = isMissing
     ? { color: '#DC2626', bg: 'rgba(220,38,38,0.08)' }
-    : Object.entries(statusConfig).find(([key]) => status && status.includes(key))?.[1] || {
+    : statusConfig[status] || Object.entries(statusConfig).find(([key]) => status && status.includes(key))?.[1] || {
         color: '#64748B', bg: 'rgba(100,116,139,0.08)',
       };
   return (
@@ -40,6 +43,7 @@ export default function CompanyDetail({
   onBack,
   onSelectProject,
   onNewSurvey,
+  onDeleteProject,
 }: Props) {
   const isAdmin = user.role === 'ADMIN';
   const [activeTab, setActiveTab] = useState<'assignments' | 'missing' | 'complete'>('assignments');
@@ -138,7 +142,7 @@ export default function CompanyDetail({
           </div>
           <h1 className="text-3xl font-black tracking-tight">{companyProject.name}</h1>
           <p className="text-xs text-blue-100 leading-relaxed font-medium">
-            Manage assignments, review specs, and track Completed security installations for {companyProject.name}.
+            {companyProject.clientName}
           </p>
 
           <div className="flex flex-wrap items-center gap-6 pt-4 text-xs font-semibold text-blue-100">
@@ -253,6 +257,23 @@ export default function CompanyDetail({
 
                     <div className="flex items-center gap-4">
                       <StatusBadge status={project.status} isMissing={isProjectMissing} />
+                      {isAdmin && onDeleteProject && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const confirm = window.confirm(`Are you sure you want to delete project/survey "${project.name}"?`);
+                            if (confirm) {
+                              onDeleteProject(project.id);
+                            }
+                          }}
+                          className="p-1 rounded-lg text-red-500 hover:bg-red-50 transition-colors cursor-pointer"
+                          title="Delete Project/Survey"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      )}
                       <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                       </svg>

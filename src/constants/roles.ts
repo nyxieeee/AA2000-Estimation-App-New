@@ -87,3 +87,11 @@ export const MATERIAL_CATEGORIES = {
 } as const;
 
 export type MaterialCategory = typeof MATERIAL_CATEGORIES[keyof typeof MATERIAL_CATEGORIES];
+
+export const DEFAULT_TECHNICIANS = [
+  { id: 'tech-1', fullName: 'John Technician', email: 'tech@aa2000.com' },
+  { id: 'tech-1', fullName: 'Mike Wilson', email: 'mike@aa2000.com' },
+  { id: 'tech-2', fullName: 'Sarah Johnson', email: 'sarah@aa2000.com' },
+  { id: 'tech-3', fullName: 'David Chen', email: 'david@aa2000.com' },
+];
+

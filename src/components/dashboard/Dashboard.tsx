@@ -19,6 +19,8 @@ interface Props {
   onNavigateToCreate: () => void;
   selectedCompanyProject: Project | null;
   setSelectedCompanyProject: (project: Project | null) => void;
+  onMarkNotificationsAsRead?: (type: string) => void;
+  onDeleteProject?: (projectId: string) => void;
 }
 
 type SortMode = 'newest' | 'oldest' | 'name-asc' | 'name-desc';
@@ -28,21 +30,38 @@ const viewTitles: Record<string, string> = {
   missing: 'Missing Requirements', done: 'Done', history: 'History / Archive', approval: 'Approval Pipeline',
   finalize: 'Finalize Review', ongoing: 'Ongoing Surveys', upcoming: 'Upcoming Surveys',
   'missing-notif': 'Missing Alerts', 'approval-notif': 'Approval Alerts', 'finalize-notif': 'Finalize Alerts',
+  notifications: 'ALL NOTIFICATION',
 };
 
 function filterProjects(projects: Project[], view: string): Project[] {
   const actualProjects = projects.filter(p => p.buildingType !== 'Other');
+  const today = new Date().toISOString().split('T')[0];
 
   switch (view) {
     case 'workspace': case 'todo': return actualProjects.filter(p => p.status === 'Pending' || p.status === 'In Progress');
     case 'assignment': return actualProjects;
-    case 'missing': case 'missing-notif': return actualProjects.filter(p => !p.status || p.status === 'Pending');
+    case 'missing': return actualProjects.filter(p => !p.status || p.status === 'Pending');
     case 'done': return actualProjects.filter(p => p.status === 'Completed' || p.status?.includes('Finalized'));
     case 'history': return actualProjects.filter(p => p.status === 'Completed');
-    case 'ongoing': return actualProjects.filter(p => p.status === 'In Progress');
-    case 'upcoming': return actualProjects.filter(p => p.status === 'Pending' && !!p.startDate && new Date(p.startDate) > new Date());
-    case 'approval': case 'approval-notif': return actualProjects.filter(p => p.status === 'Finalized' || p.status === 'In Progress');
-    case 'finalize': case 'finalize-notif': return actualProjects.filter(p => p.status === 'Finalized - Approved' || p.status === 'Finalized - Rejected');
+    case 'ongoing':
+      return actualProjects.filter(p => {
+        const isCompleted = p.status === 'Completed' || p.status?.includes('Finalized');
+        return !isCompleted && p.startDate === today;
+      });
+    case 'upcoming':
+      return actualProjects.filter(p => {
+        const isCompleted = p.status === 'Completed' || p.status?.includes('Finalized');
+        return !isCompleted && !!p.startDate && p.startDate > today;
+      });
+    case 'missing-notif':
+      return actualProjects.filter(p => {
+        const isCompleted = p.status === 'Completed' || p.status?.includes('Finalized');
+        return !isCompleted && (!p.startDate || p.startDate < today);
+      });
+    case 'approval': case 'approval-notif':
+      return actualProjects.filter(p => p.status === 'Finalized');
+    case 'finalize': case 'finalize-notif':
+      return actualProjects.filter(p => p.status === 'Finalized - Approved' || p.status === 'Finalized - Rejected' || p.status === 'Completed');
     default: return actualProjects;
   }
 }
@@ -61,11 +80,13 @@ const statusConfig: Record<string, { color: string; bg: string; bar: string }> =
   'In Progress': { color: '#2563EB', bg: 'rgba(37,99,235,0.08)', bar: '#2563EB' },
   'Pending': { color: '#1E3A8A', bg: 'rgba(30,58,138,0.08)', bar: '#1E3A8A' },
   'Completed': { color: '#059669', bg: 'rgba(5,150,105,0.08)', bar: '#059669' },
-  'Finalized': { color: '#059669', bg: 'rgba(5,150,105,0.08)', bar: '#059669' },
+  'Finalized - Approved': { color: '#059669', bg: 'rgba(5,150,105,0.08)', bar: '#059669' },
+  'Finalized - Rejected': { color: '#DC2626', bg: 'rgba(220,38,38,0.08)', bar: '#DC2626' },
+  'Finalized': { color: '#7C3AED', bg: 'rgba(124,58,237,0.08)', bar: '#7C3AED' },
 };
 
 function StatusBadge({ status }: { status: string }) {
-  const cfg = Object.entries(statusConfig).find(([key]) => status && status.includes(key))?.[1] || {
+  const cfg = statusConfig[status] || Object.entries(statusConfig).find(([key]) => status && status.includes(key))?.[1] || {
     color: '#64748B', bg: 'rgba(100,116,139,0.08)', bar: '#64748B',
   };
   return (
@@ -78,6 +99,14 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
+const typeConfig = {
+  ongoing: { color: '#2563EB', bg: 'rgba(37,99,235,0.08)', label: 'Ongoing', dot: '#2563EB' },
+  upcoming: { color: '#059669', bg: 'rgba(5,150,105,0.08)', label: 'Upcoming', dot: '#059669' },
+  missing: { color: '#D97706', bg: 'rgba(217,119,6,0.08)', label: 'Missing', dot: '#D97706' },
+  approval: { color: '#7C3AED', bg: 'rgba(124,58,237,0.08)', label: 'Approval', dot: '#7C3AED' },
+  finalize: { color: '#059669', bg: 'rgba(5,150,105,0.08)', label: 'Finalize', dot: '#059669' },
+};
+
 export default function Dashboard({
   user,
   onLogout,
@@ -89,10 +118,13 @@ export default function Dashboard({
   onNavigateToCreate,
   selectedCompanyProject,
   setSelectedCompanyProject,
+  onMarkNotificationsAsRead,
+  onDeleteProject,
 }: Props) {
   const [view, setView] = useState<View>('home');
   const [showCreate, setShowCreate] = useState(false);
   const [isCompanyMode, setIsCompanyMode] = useState(false);
+  const [activeNotifTab, setActiveNotifTab] = useState<'ongoing' | 'upcoming' | 'missing' | 'approval' | 'finalize'>('ongoing');
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<SortMode>('newest');
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
@@ -113,6 +145,17 @@ export default function Dashboard({
     setProjectList(projects);
   }, [projects]);
 
+  // Mark notifications as read when viewing relevant categories
+  useEffect(() => {
+    if (onMarkNotificationsAsRead) {
+      if (view === 'ongoing') onMarkNotificationsAsRead('ongoing');
+      else if (view === 'upcoming') onMarkNotificationsAsRead('upcoming');
+      else if (view === 'missing-notif') onMarkNotificationsAsRead('missing');
+      else if (view === 'approval-notif') onMarkNotificationsAsRead('approval');
+      else if (view === 'finalize-notif') onMarkNotificationsAsRead('finalize');
+    }
+  }, [view, onMarkNotificationsAsRead]);
+
   const isNotification = ['ongoing', 'upcoming', 'missing-notif', 'approval-notif', 'finalize-notif'].includes(view);
 
   const filtered = useMemo(() => {
@@ -129,12 +172,77 @@ export default function Dashboard({
   const ordered = [...pinnedItems, ...unpinnedItems];
 
   // Compute stats from projectList
-  const totalProjects = projectList.length;
-  const inProgressCount = projectList.filter(p => p.status === 'In Progress').length;
-  const pendingCount = projectList.filter(p => p.status === 'Pending').length;
-  const completedCount = projectList.filter(p => p.status === 'Completed' || p.status?.includes('Finalized')).length;
+  const companyCount = projectList.filter(p => p.buildingType === 'Other').length;
+  const actualProjects = projectList.filter(p => p.buildingType !== 'Other');
+  const totalProjects = actualProjects.length;
+  const inProgressCount = actualProjects.filter(p => p.status === 'In Progress').length;
+  const pendingCount = actualProjects.filter(p => p.status === 'Pending').length;
+  const completedCount = actualProjects.filter(p => p.status === 'Completed' || p.status?.includes('Finalized')).length;
 
-  const handleDelete = (id: string) => { setProjectList(prev => prev.filter(p => p.id !== id)); setDeleteConfirm(null); setMenuOpen(null); };
+  const countOngoing = notifications.filter(n => n.type === 'ongoing').length;
+  const countUpcoming = notifications.filter(n => n.type === 'upcoming').length;
+  const countMissing = notifications.filter(n => n.type === 'missing').length;
+  const countApproval = notifications.filter(n => n.type === 'approval').length;
+  const countFinalize = notifications.filter(n => n.type === 'finalize').length;
+
+  // Load completed surveys count per category
+  const categoryCounts = useMemo(() => {
+    try {
+      const surveys = JSON.parse(localStorage.getItem('aa2000_surveys') || '[]');
+      const counts: Record<string, number> = {
+        CCTV: 0,
+        FIRE_ALARM: 0,
+        FIRE_PROTECTION: 0,
+        ACCESS_CONTROL: 0,
+        BURGLAR_ALARM: 0,
+        OTHER: 0,
+      };
+      surveys.forEach((s: any) => {
+        if (s.type && counts[s.type] !== undefined) {
+          counts[s.type]++;
+        }
+      });
+      return counts;
+    } catch (e) {
+      return { CCTV: 0, FIRE_ALARM: 0, FIRE_PROTECTION: 0, ACCESS_CONTROL: 0, BURGLAR_ALARM: 0, OTHER: 0 };
+    }
+  }, [projectList]);
+
+  const handleDelete = (id: string) => {
+    const target = projectList.find(p => p.id === id);
+    const idsToDelete = [id];
+    
+    if (target && target.buildingType === 'Other') {
+      const children = projectList.filter(p => p.buildingType !== 'Other' && (p.clientName === target.name || p.clientName === target.clientName));
+      idsToDelete.push(...children.map(p => p.id));
+    }
+
+    setProjectList(prev => prev.filter(p => !idsToDelete.includes(p.id)));
+    
+    // Clean up surveys for all deleted projects
+    try {
+      const surveys = JSON.parse(localStorage.getItem('aa2000_surveys') || '[]');
+      const remaining = surveys.filter((s: any) => !idsToDelete.includes(s.projectId));
+      localStorage.setItem('aa2000_surveys', JSON.stringify(remaining));
+    } catch (e) {
+      console.error('Failed to clean up surveys', e);
+    }
+
+    // Clean up pinned status
+    setPinned(prev => {
+      const n = new Set(prev);
+      idsToDelete.forEach(dId => n.delete(dId));
+      return n;
+    });
+
+    // Notify parent to delete
+    idsToDelete.forEach(dId => {
+      if (onDeleteProject) onDeleteProject(dId);
+    });
+
+    setDeleteConfirm(null);
+    setMenuOpen(null);
+  };
   const handleSaveEdit = (updated: Project) => { setProjectList(prev => prev.map(p => p.id === updated.id ? updated : p)); setEditProject(null); };
   const handlePin = (id: string) => { setPinned(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; }); setMenuOpen(null); };
 
@@ -145,8 +253,11 @@ export default function Dashboard({
   };
   const navigateNotif = (type: string) => {
     setSelectedCompanyProject(null);
-    const m: Record<string, View> = { notifications: 'dashboard', ongoing: 'ongoing', upcoming: 'upcoming', missing: 'missing-notif', approval: 'approval-notif', finalize: 'finalize-notif' };
+    const m: Record<string, View> = { notifications: 'notifications', ongoing: 'ongoing', upcoming: 'upcoming', missing: 'missing-notif', approval: 'approval-notif', finalize: 'finalize-notif' };
     setView(m[type] || 'dashboard');
+    if (type === 'notifications' && onMarkNotificationsAsRead) {
+      onMarkNotificationsAsRead('all');
+    }
   };
 
   // Pipeline bar widths (visual only, relative to total)
@@ -159,7 +270,7 @@ export default function Dashboard({
   return (
     <div className="min-h-screen flex" style={{ background: '#F4F6FA' }}>
       <div className="h-screen sticky top-0 z-20">
-        <Sidebar user={user} currentView={view} onNavigate={navigate} onLogout={onLogout} onSettings={onSettings} />
+        <Sidebar user={user} currentView={view} onNavigate={navigate} onLogout={onLogout} onSettings={onSettings} notifications={notifications} />
       </div>
 
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto pb-10">
@@ -222,6 +333,7 @@ export default function Dashboard({
             onBack={() => setSelectedCompanyProject(null)}
             onSelectProject={onSelectProject}
             onNewSurvey={onNavigateToCreate}
+            onDeleteProject={handleDelete}
           />
         ) : view === 'home' ? (
           <Home
@@ -247,26 +359,28 @@ export default function Dashboard({
                 </p>
               </div>
 
-              {/* New Project button (Admin only, on relevant views) */}
-              {user.role === 'ADMIN' && !isNotification && view === 'dashboard' && (
-                <button
-                  onClick={() => { setIsCompanyMode(false); setShowCreate(true); }}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-full text-[10px] font-bold text-white tracking-widest hover:opacity-95 transition-all duration-150 shadow-sm"
-                  style={{ background: '#1E3A8A' }}
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                  </svg>
-                  NEW PROJECT
-                </button>
-              )}
+
             </div>
 
             {/* Stats Row — dashboard view only */}
             {view === 'dashboard' && (
-              <div className="px-8 pt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="px-8 pt-6 flex flex-row gap-4 w-full">
+                {/* Total Companies */}
+                <div className="flex-1 min-w-0 bg-white rounded-3xl p-6 shadow-sm border border-slate-100 flex flex-col justify-between relative overflow-hidden h-36">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-[#94A3B8] tracking-widest">TOTAL COMPANIES</span>
+                  </div>
+                  <div>
+                    <p className="text-3xl font-black text-[#1E3A8A]">{companyCount}</p>
+                    <p className="text-[10px] font-bold text-slate-400 mt-1">Company folders</p>
+                    <div className="absolute right-4 bottom-4 w-11 h-11 bg-blue-50 rounded-2xl flex items-center justify-center text-[#1E3A8A] text-lg">
+                      🏢
+                    </div>
+                  </div>
+                </div>
+
                 {/* Total Projects */}
-                <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 flex flex-col justify-between relative overflow-hidden h-36">
+                <div className="flex-1 min-w-0 bg-white rounded-3xl p-6 shadow-sm border border-slate-100 flex flex-col justify-between relative overflow-hidden h-36">
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-bold text-[#94A3B8] tracking-widest">TOTAL PROJECTS</span>
                   </div>
@@ -280,7 +394,7 @@ export default function Dashboard({
                 </div>
 
                 {/* In Progress */}
-                <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 flex flex-col justify-between relative overflow-hidden h-36">
+                <div className="flex-1 min-w-0 bg-white rounded-3xl p-6 shadow-sm border border-slate-100 flex flex-col justify-between relative overflow-hidden h-36">
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-bold text-[#94A3B8] tracking-widest">IN PROGRESS</span>
                     {inProgressCount > 0 && (
@@ -297,7 +411,7 @@ export default function Dashboard({
                 </div>
 
                 {/* Pending */}
-                <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 flex flex-col justify-between relative overflow-hidden h-36">
+                <div className="flex-1 min-w-0 bg-white rounded-3xl p-6 shadow-sm border border-slate-100 flex flex-col justify-between relative overflow-hidden h-36">
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-bold text-[#94A3B8] tracking-widest">PENDING</span>
                     {pendingCount > 0 && (
@@ -314,7 +428,7 @@ export default function Dashboard({
                 </div>
 
                 {/* Completed */}
-                <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 flex flex-col justify-between relative overflow-hidden h-36">
+                <div className="flex-1 min-w-0 bg-white rounded-3xl p-6 shadow-sm border border-slate-100 flex flex-col justify-between relative overflow-hidden h-36">
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-bold text-[#94A3B8] tracking-widest">COMPLETED</span>
                     {completedCount > 0 && (
@@ -391,29 +505,38 @@ export default function Dashboard({
                   </div>
                   <div className="space-y-2.5 flex-1">
                     {[
-                      { label: 'CCTV Surveillance', icon: '📷', color: '#1E3A8A', bg: '#EFF6FF' },
-                      { label: 'Fire Alarm System', icon: '🔔', color: '#B91C1C', bg: '#FEF2F2' },
-                      { label: 'Fire Protection', icon: '🔥', color: '#D97706', bg: '#FFFBEB' },
-                      { label: 'Access Control', icon: '🔑', color: '#047857', bg: '#ECFDF5' },
-                      { label: 'Burglar Alarm', icon: '🛡️', color: '#6D28D9', bg: '#F5F3FF' },
-                      { label: 'Other Systems', icon: '⚙️', color: '#334155', bg: '#F8FAFC' },
-                    ].map(cat => (
-                      <div
-                        key={cat.label}
-                        className="flex items-center gap-3 px-3 py-2 rounded-xl"
-                        style={{ background: cat.bg }}
-                      >
-                        <span className="text-base">{cat.icon}</span>
-                        <span className="text-[11px] font-bold" style={{ color: cat.color }}>{cat.label}</span>
-                      </div>
-                    ))}
+                      { key: 'CCTV', label: 'CCTV Surveillance', icon: '📷', color: '#1E3A8A', bg: '#EFF6FF' },
+                      { key: 'FIRE_ALARM', label: 'Fire Alarm System', icon: '🔔', color: '#B91C1C', bg: '#FEF2F2' },
+                      { key: 'FIRE_PROTECTION', label: 'Fire Protection', icon: '🔥', color: '#D97706', bg: '#FFFBEB' },
+                      { key: 'ACCESS_CONTROL', label: 'Access Control', icon: '🔑', color: '#047857', bg: '#ECFDF5' },
+                      { key: 'BURGLAR_ALARM', label: 'Burglar Alarm', icon: '🛡️', color: '#6D28D9', bg: '#F5F3FF' },
+                      { key: 'OTHER', label: 'Other Systems', icon: '⚙️', color: '#334155', bg: '#F8FAFC' },
+                    ].map(cat => {
+                      const count = categoryCounts[cat.key] || 0;
+                      return (
+                        <div
+                          key={cat.label}
+                          className="flex items-center justify-between px-3 py-2 rounded-xl"
+                          style={{ background: cat.bg }}
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="text-base">{cat.icon}</span>
+                            <span className="text-[11px] font-bold" style={{ color: cat.color }}>{cat.label}</span>
+                          </div>
+                          <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-white/60 text-slate-700 shadow-sm border border-slate-100">
+                            {count}
+                          </span>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
             )}
 
             {/* Project Table */}
-            <div className="px-8 pt-6">
+            {view !== 'dashboard' && view !== 'notifications' && (
+              <div className="px-8 pt-6">
               <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
 
                 {/* Controls row */}
@@ -429,7 +552,7 @@ export default function Dashboard({
 
                   <div className="flex items-center gap-3 w-full sm:w-auto">
                     {/* Search (only shown on non-dashboard views where top bar search won't filter) */}
-                    {view !== 'dashboard' && (
+                    {true && (
                       <div className="relative flex-1 sm:max-w-xs">
                         <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -456,16 +579,7 @@ export default function Dashboard({
                       <option value="name-desc">Name Z–A</option>
                     </select>
 
-                    {/* New Project (Admin only, non-dashboard views) */}
-                    {user.role === 'ADMIN' && !isNotification && view !== 'dashboard' && (
-                      <button
-                        onClick={() => { setIsCompanyMode(false); setShowCreate(true); }}
-                        className="px-4 py-2 rounded-xl text-xs font-bold text-white hover:opacity-90 transition-all"
-                        style={{ background: '#1E3A8A' }}
-                      >
-                        + New Project
-                      </button>
-                    )}
+
                   </div>
                 </div>
 
@@ -583,6 +697,111 @@ export default function Dashboard({
 
               </div>
             </div>
+            )}
+
+            {/* Notification View */}
+            {view === 'notifications' && (
+              <div className="px-8 pt-6">
+                <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
+                  {/* Tabs list */}
+                  <div className="flex border-b border-slate-100 pb-4 mb-6">
+                    <div className="flex flex-wrap gap-4">
+                      <button
+                        onClick={() => setActiveNotifTab('ongoing')}
+                        className={`pb-2 text-xs font-bold uppercase tracking-wider border-b-2 transition-all px-2 ${
+                          activeNotifTab === 'ongoing'
+                            ? 'border-[#2563EB] text-[#2563EB]'
+                            : 'border-transparent text-slate-400 hover:text-slate-600'
+                        }`}
+                      >
+                        Ongoing Surveys ({countOngoing})
+                      </button>
+                      <button
+                        onClick={() => setActiveNotifTab('upcoming')}
+                        className={`pb-2 text-xs font-bold uppercase tracking-wider border-b-2 transition-all px-2 ${
+                          activeNotifTab === 'upcoming'
+                            ? 'border-[#059669] text-[#059669]'
+                            : 'border-transparent text-slate-400 hover:text-slate-600'
+                        }`}
+                      >
+                        Upcoming Surveys ({countUpcoming})
+                      </button>
+                      <button
+                        onClick={() => setActiveNotifTab('missing')}
+                        className={`pb-2 text-xs font-bold uppercase tracking-wider border-b-2 transition-all px-2 ${
+                          activeNotifTab === 'missing'
+                            ? 'border-[#D97706] text-[#D97706]'
+                            : 'border-transparent text-slate-400 hover:text-slate-600'
+                        }`}
+                      >
+                        Missing Alerts ({countMissing})
+                      </button>
+                      {user.role === 'ADMIN' && (
+                        <>
+                          <button
+                            onClick={() => setActiveNotifTab('approval')}
+                            className={`pb-2 text-xs font-bold uppercase tracking-wider border-b-2 transition-all px-2 ${
+                              activeNotifTab === 'approval'
+                                ? 'border-[#4F46E5] text-[#4F46E5]'
+                                : 'border-transparent text-slate-400 hover:text-slate-600'
+                            }`}
+                          >
+                            Approval Alerts ({countApproval})
+                          </button>
+                          <button
+                            onClick={() => setActiveNotifTab('finalize')}
+                            className={`pb-2 text-xs font-bold uppercase tracking-wider border-b-2 transition-all px-2 ${
+                              activeNotifTab === 'finalize'
+                                ? 'border-[#10B981] text-[#10B981]'
+                                : 'border-transparent text-slate-400 hover:text-slate-600'
+                            }`}
+                          >
+                            Finalize Alerts ({countFinalize})
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* List of items */}
+                  <div className="divide-y divide-slate-100">
+                    {notifications.filter(n => n.type === activeNotifTab).length === 0 ? (
+                      <div className="py-12 text-center text-xs text-slate-400 font-bold">
+                        No alerts in this category
+                      </div>
+                    ) : (
+                      notifications
+                        .filter(n => n.type === activeNotifTab)
+                        .map(n => {
+                          const cfg = typeConfig[n.type] || typeConfig.ongoing;
+                          return (
+                            <div
+                              key={n.id}
+                              onClick={() => navigateNotif(n.type)}
+                              className="py-4 flex items-start gap-4 cursor-pointer hover:bg-slate-50/50 px-2 -mx-2 rounded-xl transition-colors"
+                            >
+                              <div
+                                className="w-2.5 h-2.5 rounded-full mt-1.5 shrink-0"
+                                style={{ background: !n.read ? cfg.dot : '#CBD5E1' }}
+                              />
+                              <div className="min-w-0 flex-1">
+                                <p className={`text-sm ${!n.read ? 'font-bold text-slate-800' : 'text-slate-500'}`}>
+                                  {n.title}
+                                </p>
+                                <div className="flex items-center gap-3 mt-1.5">
+                                  <span className="text-xs text-slate-400 font-semibold">
+                                    {n.companyName} · {n.date}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
           </>
         )}
 

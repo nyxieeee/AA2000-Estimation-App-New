@@ -209,33 +209,105 @@ export default function SurveyWizard({ projectId, surveyType, onComplete, onBack
 // ─── Sub-forms ─────────────────────────────────────────────
 
 function BuildingForm({ data, onChange }: { data: any; onChange: any }) {
+  const handleDimensionChange = (key: string, val: number) => {
+    onChange(key, val);
+    
+    const length = key === 'buildingLength' ? val : (data.buildingLength || 0);
+    const width = key === 'buildingWidth' ? val : (data.buildingWidth || 0);
+    const floors = key === 'floors' ? val : (data.floors || 1);
+    
+    if (length > 0 && width > 0) {
+      onChange('totalFloorArea', length * width * floors);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <h3 className="font-bold text-lg">Building Information</h3>
       <div className="grid grid-cols-2 gap-4">
-        <div className="col-span-2">
-          <label className="block text-xs font-bold text-slate-600 mb-1.5">Building Type</label>
-          <select value={data.buildingType || ''} onChange={e => onChange('buildingType', e.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200/60 bg-white/50 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 focus:outline-none transition-all">
-            <option value="">Select...</option>
-            <option value="Office">Office</option>
-            <option value="Retail">Retail</option>
-            <option value="Warehouse">Warehouse</option>
-            <option value="School">School</option>
-            <option value="Hospital">Hospital</option>
-            <option value="Residential">Residential</option>
-          </select>
-        </div>
         <div>
           <label className="block text-xs font-bold text-slate-600 mb-1.5">Number of Floors</label>
-          <input type="number" min={1} value={data.floors || 1} onChange={e => onChange('floors', Number(e.target.value))} className="w-full px-4 py-3 rounded-xl border border-slate-200/60 bg-white/50 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 focus:outline-none transition-all" />
+          <input
+            type="number"
+            min={1}
+            value={data.floors || 1}
+            onChange={e => handleDimensionChange('floors', Number(e.target.value))}
+            className="w-full px-4 py-3 rounded-xl border border-slate-200/60 bg-white/50 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 focus:outline-none transition-all"
+          />
         </div>
         <div>
           <label className="block text-xs font-bold text-slate-600 mb-1.5">Is New Building?</label>
-          <select value={data.isNew ?? ''} onChange={e => onChange('isNew', e.target.value === 'true')} className="w-full px-4 py-3 rounded-xl border border-slate-200/60 bg-white/50 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 focus:outline-none transition-all">
+          <select
+            value={data.isNew ?? ''}
+            onChange={e => onChange('isNew', e.target.value === 'true')}
+            className="w-full px-4 py-3 rounded-xl border border-slate-200/60 bg-white/50 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 focus:outline-none transition-all"
+          >
             <option value="">Select...</option>
             <option value="true">Yes</option>
             <option value="false">No (Existing)</option>
           </select>
+        </div>
+
+        <div>
+          <label className="block text-xs font-bold text-slate-600 mb-1.5">Building Length (m)</label>
+          <input
+            type="number"
+            min={0}
+            step="any"
+            value={data.buildingLength || ''}
+            onChange={e => handleDimensionChange('buildingLength', Number(e.target.value))}
+            placeholder="e.g. 50"
+            className="w-full px-4 py-3 rounded-xl border border-slate-200/60 bg-white/50 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 focus:outline-none transition-all"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-bold text-slate-600 mb-1.5">Building Width (m)</label>
+          <input
+            type="number"
+            min={0}
+            step="any"
+            value={data.buildingWidth || ''}
+            onChange={e => handleDimensionChange('buildingWidth', Number(e.target.value))}
+            placeholder="e.g. 30"
+            className="w-full px-4 py-3 rounded-xl border border-slate-200/60 bg-white/50 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 focus:outline-none transition-all"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-bold text-slate-600 mb-1.5">Total Floor Area (m²)</label>
+          <input
+            type="number"
+            min={0}
+            step="any"
+            value={data.totalFloorArea || ''}
+            onChange={e => onChange('totalFloorArea', Number(e.target.value))}
+            placeholder="Auto-calculated"
+            className="w-full px-4 py-3 rounded-xl border border-slate-200/60 bg-white/50 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 focus:outline-none transition-all"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-bold text-slate-600 mb-1.5">Floor Height (m)</label>
+          <input
+            type="number"
+            min={0}
+            step="any"
+            value={data.floorHeight || ''}
+            onChange={e => onChange('floorHeight', Number(e.target.value))}
+            placeholder="e.g. 3.5"
+            className="w-full px-4 py-3 rounded-xl border border-slate-200/60 bg-white/50 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 focus:outline-none transition-all"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-bold text-slate-600 mb-1.5">Number of Rooms</label>
+          <input
+            type="number"
+            min={0}
+            value={data.roomsCount || ''}
+            onChange={e => onChange('roomsCount', Number(e.target.value))}
+            placeholder="e.g. 12"
+            className="w-full px-4 py-3 rounded-xl border border-slate-200/60 bg-white/50 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 focus:outline-none transition-all"
+          />
         </div>
       </div>
     </div>

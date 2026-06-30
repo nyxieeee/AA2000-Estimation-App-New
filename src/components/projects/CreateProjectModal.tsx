@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { Project } from '../../App';
 import LeafletMap from '../utils/LeafletMap';
+import { DEFAULT_TECHNICIANS } from '../../constants/roles';
 
 interface Props {
   onClose: () => void;
@@ -37,7 +38,7 @@ export default function CreateProjectModal({ onClose, onCreate, isCompanyMode = 
       floors: isCompanyMode ? 1 : floors,
       status: 'Pending',
       startDate: new Date().toISOString().split('T')[0],
-      assignedTechnicians: [],
+      assignedTechnicians: DEFAULT_TECHNICIANS,
       createdAt: new Date().toISOString(),
     };
     onCreate(newProject);
@@ -80,7 +81,7 @@ export default function CreateProjectModal({ onClose, onCreate, isCompanyMode = 
                 {isCompanyMode ? 'Create New Company' : 'Create New Project'}
               </h2>
               <p className="text-[10px] font-bold text-slate-400">
-                {isCompanyMode ? 'Initialize a new site survey company' : 'Initialize a new site survey project'}
+                {isCompanyMode ? 'Initialize a new company profile' : 'Initialize a new site survey project'}
               </p>
             </div>
           </div>
@@ -94,10 +95,10 @@ export default function CreateProjectModal({ onClose, onCreate, isCompanyMode = 
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label style={labelStyle}>{isCompanyMode ? 'Company Name' : 'Project Name'}</label>
-              <input value={name} onChange={e => setName(e.target.value)} style={inputStyle} placeholder={isCompanyMode ? "e.g. MegaCorp Office Survey" : "e.g. BGC CCTV Site Survey"} required />
+              <input value={name} onChange={e => setName(e.target.value)} style={inputStyle} placeholder={isCompanyMode ? "e.g. BGC CCTV Site Survey" : "e.g. BGC CCTV Site Survey"} required />
             </div>
             <div>
-              <label style={labelStyle}>Company / Client Name</label>
+              <label style={labelStyle}>Client Name</label>
               <input value={client} onChange={e => setClient(e.target.value)} style={inputStyle} placeholder="e.g. MegaCorp Philippines" required />
             </div>
           </div>
@@ -114,7 +115,7 @@ export default function CreateProjectModal({ onClose, onCreate, isCompanyMode = 
           </div>
 
           <div>
-            <label style={labelStyle}>{isCompanyMode ? 'Company Location Address' : 'Project Location Address'}</label>
+            <label style={labelStyle}>{isCompanyMode ? 'Project/Survey Location Address' : 'Project Location Address'}</label>
             <input value={location} onChange={e => setLocation(e.target.value)} style={inputStyle} placeholder="e.g. 5th Ave, Taguig, Metro Manila" required />
           </div>
 

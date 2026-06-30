@@ -1,11 +1,13 @@
 import React from 'react';
 import type { User } from '../../App';
+import type { Notification } from '../notifications/NotificationBell';
 
 type View =
   | 'home' | 'dashboard' | 'workspace' | 'create-survey'
   | 'todo' | 'assignment' | 'missing' | 'done' | 'history'
   | 'approval' | 'finalize'
-  | 'ongoing' | 'upcoming' | 'missing-notif' | 'approval-notif' | 'finalize-notif';
+  | 'ongoing' | 'upcoming' | 'missing-notif' | 'approval-notif' | 'finalize-notif'
+  | 'notifications';
 
 interface Props {
   user: User;
@@ -13,6 +15,7 @@ interface Props {
   onNavigate: (view: View) => void;
   onLogout: () => void;
   onSettings?: () => void;
+  notifications?: Notification[];
 }
 
 const navIcons: Record<string, React.ReactNode> = {
@@ -91,12 +94,76 @@ const navIcons: Record<string, React.ReactNode> = {
       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
     </svg>
   ),
+  notifications: (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+    </svg>
+  ),
 };
 
-export default function Sidebar({ user, currentView, onNavigate, onLogout, onSettings }: Props) {
+export default function Sidebar({ user, currentView, onNavigate, onLogout, onSettings, notifications }: Props) {
   const isAdmin = user.role === 'ADMIN';
 
-  const navGroups: { label: string; items: { label: string; view: View; accent?: string }[] }[] = [
+  const getUnreadCount = (viewName: View) => {
+    if (!notifications) return 0;
+    if (viewName === 'notifications') {
+      return notifications.filter(n => !n.read).length;
+    }
+    const viewToNotifType: Record<string, string> = {
+      ongoing: 'ongoing',
+      upcoming: 'upcoming',
+      'missing-notif': 'missing',
+      'approval-notif': 'approval',
+      'finalize-notif': 'finalize',
+    };
+    const notifType = viewToNotifType[viewName];
+    if (!notifType) return 0;
+    return notifications.filter(n => n.type === notifType && !n.read).length;
+  };
+
+  const getNotificationCount = (viewName: View) => {
+    if (!notifications) return 0;
+    if (viewName === 'notifications') {
+      return notifications.length;
+    }
+    const viewToNotifType: Record<string, string> = {
+      ongoing: 'ongoing',
+      upcoming: 'upcoming',
+      'missing-notif': 'missing',
+      'approval-notif': 'approval',
+      'finalize-notif': 'finalize',
+    };
+    const notifType = viewToNotifType[viewName];
+    if (!notifType) return 0;
+    return notifications.filter(n => n.type === notifType).length;
+  };
+
+  const isNotificationView = [
+    'notifications',
+    'ongoing',
+    'upcoming',
+    'missing-notif',
+    'approval-notif',
+    'finalize-notif'
+  ].includes(currentView);
+
+  const navGroups: { label: string; items: { label: string; view: View; accent?: string }[] }[] = isNotificationView ? [
+    {
+      label: 'NOTIFICATION',
+      items: [
+        { view: 'notifications', label: 'All Notification', accent: '#1E3A8A' },
+        { view: 'ongoing', label: 'Ongoing Surveys', accent: '#2563EB' },
+        { view: 'upcoming', label: 'Upcoming Surveys', accent: '#10B981' },
+        { view: 'missing-notif', label: 'Missing Alerts', accent: '#F59E0B' },
+        ...(isAdmin
+          ? [
+              { view: 'approval-notif' as View, label: 'Approval Alerts', accent: '#4F46E5' },
+              { view: 'finalize-notif' as View, label: 'Finalize Alerts', accent: '#10B981' },
+            ]
+          : []),
+      ],
+    },
+  ] : [
     {
       label: 'SURVEYS',
       items: [
@@ -120,20 +187,6 @@ export default function Sidebar({ user, currentView, onNavigate, onLogout, onSet
         { view: 'history', label: 'History Archive', accent: '#64748B' },
       ],
     },
-    {
-      label: 'NOTIFICATIONS',
-      items: [
-        { view: 'ongoing', label: 'Ongoing Surveys', accent: '#2563EB' },
-        { view: 'upcoming', label: 'Upcoming Surveys', accent: '#10B981' },
-        { view: 'missing-notif', label: 'Missing Alerts', accent: '#F59E0B' },
-        ...(isAdmin
-          ? [
-              { view: 'approval-notif' as View, label: 'Approval Alerts', accent: '#4F46E5' },
-              { view: 'finalize-notif' as View, label: 'Finalize Alerts', accent: '#10B981' },
-            ]
-          : []),
-      ],
-    },
   ];
 
 
@@ -144,20 +197,35 @@ export default function Sidebar({ user, currentView, onNavigate, onLogout, onSet
       className="w-60 flex flex-col h-full shrink-0 overflow-hidden"
       style={{ background: '#FFFFFF', borderRight: '1px solid #E5E7EB' }}
     >
-      {/* Brand Logo - Styled directly after screenshot */}
+      {/* Brand Logo or Back button - depending on mode */}
       <div className="px-5 py-5" style={{ borderBottom: '1px solid #E5E7EB' }}>
-        <div className="flex items-center gap-2.5">
-          <div
-            className="w-9 h-9 rounded-lg flex items-center justify-center text-white font-black text-sm shrink-0"
-            style={{ background: '#1E3A8A' }}
+        {isNotificationView ? (
+          <button
+            onClick={() => onNavigate('home')}
+            className="flex items-center gap-2.5 text-[#64748B] hover:text-[#1E3A8A] transition-colors font-bold text-xs"
           >
-            A
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            Back to Dashboard
+          </button>
+        ) : (
+          <div
+            className="flex items-center gap-2.5 cursor-pointer hover:opacity-85 transition-opacity"
+            onClick={() => onNavigate('home')}
+          >
+            <div
+              className="w-9 h-9 rounded-lg flex items-center justify-center text-white font-black text-sm shrink-0"
+              style={{ background: '#1E3A8A' }}
+            >
+              A
+            </div>
+            <div>
+              <span className="text-sm font-black tracking-tight" style={{ color: '#1E3A8A' }}>AA2000</span>
+              <p className="text-[9px] font-bold tracking-widest text-[#94A3B8]" style={{ marginTop: '-2px' }}>CONNECT</p>
+            </div>
           </div>
-          <div>
-            <span className="text-sm font-black tracking-tight" style={{ color: '#1E3A8A' }}>AA2000</span>
-            <p className="text-[9px] font-bold tracking-widest text-[#94A3B8]" style={{ marginTop: '-2px' }}>CONNECT</p>
-          </div>
-        </div>
+        )}
       </div>
 
       {/* User profile */}
@@ -233,6 +301,32 @@ export default function Sidebar({ user, currentView, onNavigate, onLogout, onSet
                       {navIcons[item.view]}
                     </span>
                     {item.label}
+                    {(() => {
+                       const isNotifItem = [
+                         'notifications',
+                         'ongoing',
+                         'upcoming',
+                         'missing-notif',
+                         'approval-notif',
+                         'finalize-notif'
+                       ].includes(item.view);
+
+                       const count = isNotifItem ? getNotificationCount(item.view) : getUnreadCount(item.view);
+                       if (isNotifItem || count > 0) {
+                         return (
+                           <span
+                             className="ml-auto px-2 py-0.5 rounded-full text-[9px] font-black tracking-wider transition-all duration-200"
+                             style={{
+                               background: item.accent ? `${item.accent}15` : 'rgba(30,58,138,0.08)',
+                               color: item.accent || '#1E3A8A',
+                             }}
+                           >
+                             {count}
+                           </span>
+                         );
+                       }
+                       return null;
+                     })()}
                   </button>
                 );
               })}
@@ -245,9 +339,37 @@ export default function Sidebar({ user, currentView, onNavigate, onLogout, onSet
       <div className="px-3 py-3" style={{ borderTop: '1px solid #E5E7EB' }}>
         <p className="px-2.5 mb-2 text-[9px] font-bold uppercase tracking-widest text-[#94A3B8]">ACCOUNT</p>
         
+        {(() => {
+          const totalUnreadCount = notifications ? notifications.filter(n => !n.read).length : 0;
+          return (
+            <button
+              onClick={() => onNavigate('notifications')}
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-semibold transition-all duration-150 text-[#64748B]"
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLElement).style.background = '#F8FAFC';
+                (e.currentTarget as HTMLElement).style.color = '#1E293B';
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLElement).style.background = 'transparent';
+                (e.currentTarget as HTMLElement).style.color = '#64748B';
+              }}
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+              </svg>
+              Notification
+              {totalUnreadCount > 0 && (
+                <span className="ml-auto px-2 py-0.5 rounded-full text-[9px] font-black tracking-wider bg-red-50 text-red-500 border border-red-100">
+                  {totalUnreadCount}
+                </span>
+              )}
+            </button>
+          );
+        })()}
+
         <button
           onClick={onSettings}
-          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-semibold transition-all duration-150 text-[#64748B]"
+          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-semibold transition-all duration-150 mt-1 text-[#64748B]"
           onMouseEnter={e => {
             (e.currentTarget as HTMLElement).style.background = '#F8FAFC';
             (e.currentTarget as HTMLElement).style.color = '#1E293B';
@@ -261,7 +383,7 @@ export default function Sidebar({ user, currentView, onNavigate, onLogout, onSet
             <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
-          Settings
+          Setting
         </button>
 
         <button

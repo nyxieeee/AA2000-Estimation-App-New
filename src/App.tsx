@@ -7,10 +7,13 @@ import SurveyWizard from './components/surveys/SurveyWizard';
 import EstimationSummary from './components/estimation/EstimationSummary';
 import Settings from './components/settings/Settings';
 import CreateSurveyForm from './components/estimation/CreateSurveyForm';
+import SurveySummary from './components/reports/SurveySummary';
 import type { SurveyFormData } from './components/estimation/CreateSurveyForm';
 import type { Notification } from './components/notifications/NotificationBell';
+import { DEFAULT_TECHNICIANS } from './constants/roles';
 
-export type Screen = 'login' | 'dashboard' | 'create-survey' | 'project-detail' | 'survey' | 'estimation' | 'settings' | 'notifications';
+
+export type Screen = 'login' | 'dashboard' | 'create-survey' | 'project-detail' | 'survey' | 'estimation' | 'settings' | 'notifications' | 'survey-summary';
 export type SurveyType = 'CCTV' | 'FIRE_ALARM' | 'FIRE_PROTECTION' | 'ACCESS_CONTROL' | 'BURGLAR_ALARM' | 'OTHER';
 
 export interface User {
@@ -42,7 +45,7 @@ export interface Project {
   isNewBuilding?: boolean;
 }
 
-const APP_VERSION = 'aa2000_v4';
+const APP_VERSION = 'aa2000_v5';
 const STORAGE_KEYS = {
   projects: 'aa2000_projects',
   notifications: 'aa2000_notifications',
@@ -58,6 +61,7 @@ const STORAGE_KEYS = {
       Object.values(STORAGE_KEYS).forEach(key => localStorage.removeItem(key));
       localStorage.removeItem('aa2000_seeded');
       localStorage.removeItem('aa2000_pinned');
+      localStorage.removeItem('aa2000_surveys');
       localStorage.setItem('aa2000_app_version', APP_VERSION);
     }
   } catch {}
@@ -147,6 +151,69 @@ export default function App() {
     saveToStorage(STORAGE_KEYS.user, user);
   }, [user]);
 
+  // Sync notifications from projects automatically
+  useEffect(() => {
+    const today = new Date().toISOString().split('T')[0];
+    const actualProjects = projects.filter(p => p.buildingType !== 'Other');
+
+    setNotifications(prev => {
+      const prevMap = new Map(prev.map(n => [n.id, n.read]));
+      const newNotifs: Notification[] = [];
+
+      actualProjects.forEach(project => {
+        let type: 'ongoing' | 'upcoming' | 'missing' | 'approval' | 'finalize' | null = null;
+        let title = '';
+
+        const isCompleted = project.status === 'Completed' || project.status?.includes('Finalized');
+
+        if (!isCompleted) {
+          if (!project.startDate) {
+            type = 'missing';
+            title = `Missing Specs: ${project.name}`;
+          } else if (project.startDate > today) {
+            type = 'upcoming';
+            title = `Upcoming Survey: ${project.name}`;
+          } else if (project.startDate === today) {
+            type = 'ongoing';
+            title = `Ongoing Survey: ${project.name}`;
+          } else {
+            type = 'missing';
+            title = `Missing Specs: ${project.name}`;
+          }
+        } else if (project.status === 'Finalized') {
+          type = 'approval';
+          title = `Awaiting Approval: ${project.name}`;
+        } else if (project.status === 'Finalized - Approved' || project.status === 'Finalized - Rejected') {
+          type = 'finalize';
+          title = `Finalized Review: ${project.name}`;
+        } else if (project.status === 'Completed') {
+          type = 'finalize';
+          title = `Survey Completed: ${project.name}`;
+        }
+
+        if (type) {
+          const id = `notif-${project.id}-${type}`;
+          newNotifs.push({
+            id,
+            title,
+            companyName: project.clientName,
+            date: project.startDate || project.createdAt.split('T')[0],
+            read: prevMap.get(id) || false,
+            type,
+          });
+        }
+      });
+
+      return newNotifs;
+    });
+  }, [projects]);
+
+  const handleMarkNotificationsAsRead = useCallback((type: string) => {
+    setNotifications(prev =>
+      prev.map(n => (n.type === type || type === 'all') ? { ...n, read: true } : n)
+    );
+  }, []);
+
 
 
   const handleLogin = useCallback((u: User) => {
@@ -180,11 +247,40 @@ export default function App() {
   }, []);
 
   const handleSurveyComplete = useCallback(() => {
-    setScreen('project-detail');
+    if (currentProject) {
+      setProjects(prev =>
+        prev.map(p =>
+          p.id === currentProject.id ? { ...p, status: p.status === 'Pending' ? 'In Progress' : p.status } : p
+        )
+      );
+      setCurrentProject(prev => prev ? { ...prev, status: prev.status === 'Pending' ? 'In Progress' : prev.status } : null);
+    }
+    setScreen('estimation');
+  }, [currentProject]);
+
+  const handleUpdateProjectStatus = useCallback((projectId: string, status: string) => {
+    setProjects(prev =>
+      prev.map(p =>
+        p.id === projectId ? { ...p, status } : p
+      )
+    );
+    setCurrentProject(prev => prev && prev.id === projectId ? { ...prev, status } : prev);
   }, []);
 
   const handleViewEstimation = useCallback(() => {
     setScreen('estimation');
+  }, []);
+
+  const handleDeleteProject = useCallback((projectId: string) => {
+    setProjects(prev => prev.filter(p => p.id !== projectId));
+    setCurrentProject(null);
+    try {
+      const surveys = JSON.parse(localStorage.getItem('aa2000_surveys') || '[]');
+      const remaining = surveys.filter((s: any) => s.projectId !== projectId);
+      localStorage.setItem('aa2000_surveys', JSON.stringify(remaining));
+    } catch (e) {
+      console.error('Failed to clean up surveys on deletion', e);
+    }
   }, []);
 
   const handleBackToDashboard = useCallback(() => {
@@ -223,7 +319,7 @@ export default function App() {
       surveyScope: data.surveyScope,
       status: 'Pending',
       startDate: data.startDate,
-      assignedTechnicians: [],
+      assignedTechnicians: DEFAULT_TECHNICIANS,
       createdAt: now,
     };
 
@@ -271,6 +367,8 @@ export default function App() {
             onNavigateToCreate={handleNavigateToCreate}
             selectedCompanyProject={currentCompanyProject}
             setSelectedCompanyProject={setCurrentCompanyProject}
+            onMarkNotificationsAsRead={handleMarkNotificationsAsRead}
+            onDeleteProject={handleDeleteProject}
           />
           <div className="fixed inset-0 z-50 overflow-y-auto" style={{ background: '#F4F6FA' }}>
             <CreateSurveyForm onSave={handleSaveSurvey} onExit={handleExitCreateSurvey} initialCompanyName={prefilledCompanyName} />
@@ -297,6 +395,8 @@ export default function App() {
           onBack={handleBackToDashboard}
           onStartSurvey={handleStartSurvey}
           onViewEstimation={handleViewEstimation}
+          onViewSurveySummary={() => setScreen('survey-summary')}
+          onUpdateStatus={handleUpdateProjectStatus}
         />
       </ErrorBoundary>
     );
@@ -327,6 +427,17 @@ export default function App() {
     );
   }
 
+  if (screen === 'survey-summary' && currentProject) {
+    return (
+      <ErrorBoundary>
+        <SurveySummary
+          project={currentProject}
+          onBack={() => setScreen('project-detail')}
+        />
+      </ErrorBoundary>
+    );
+  }
+
   // Default: dashboard
   return (
     <ErrorBoundary>
@@ -341,6 +452,8 @@ export default function App() {
         onNavigateToCreate={handleNavigateToCreate}
         selectedCompanyProject={currentCompanyProject}
         setSelectedCompanyProject={setCurrentCompanyProject}
+        onMarkNotificationsAsRead={handleMarkNotificationsAsRead}
+        onDeleteProject={handleDeleteProject}
       />
     </ErrorBoundary>
   );

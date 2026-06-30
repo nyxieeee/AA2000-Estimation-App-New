@@ -90,9 +90,11 @@ function StatusBadge({ status }: { status: string }) {
     'In Progress': { color: '#2563EB', bg: 'rgba(37,99,235,0.08)' },
     'Pending': { color: '#D97706', bg: 'rgba(217,119,6,0.08)' },
     'Completed': { color: '#059669', bg: 'rgba(5,150,105,0.08)' },
+    'Finalized - Approved': { color: '#059669', bg: 'rgba(5,150,105,0.08)' },
+    'Finalized - Rejected': { color: '#DC2626', bg: 'rgba(220,38,38,0.08)' },
     'Finalized': { color: '#7C3AED', bg: 'rgba(124,58,237,0.08)' },
   };
-  const cfg = Object.entries(configs).find(([key]) => status && status.includes(key))?.[1] || { color: '#64748B', bg: 'rgba(100,116,139,0.08)' };
+  const cfg = configs[status] || Object.entries(configs).find(([key]) => status && status.includes(key))?.[1] || { color: '#64748B', bg: 'rgba(100,116,139,0.08)' };
   return (
     <span
       className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide"
@@ -109,9 +111,11 @@ interface Props {
   onBack: () => void;
   onStartSurvey: (type: SurveyType) => void;
   onViewEstimation: () => void;
+  onViewSurveySummary: () => void;
+  onUpdateStatus: (projectId: string, status: string) => void;
 }
 
-export default function ProjectDetail({ user: _user, project, onBack, onStartSurvey, onViewEstimation }: Props) {
+export default function ProjectDetail({ user, project, onBack, onStartSurvey, onViewEstimation, onViewSurveySummary, onUpdateStatus }: Props) {
   const activeSurveyTypes = React.useMemo(() => {
     if (!project.systemTypes || project.systemTypes.length === 0) {
       return SURVEY_TYPES;
@@ -136,6 +140,35 @@ export default function ProjectDetail({ user: _user, project, onBack, onStartSur
       });
     });
   }, [project.systemTypes]);
+
+  const completedSurveys = React.useMemo(() => {
+    try {
+      return JSON.parse(localStorage.getItem('aa2000_surveys') || '[]')
+        .filter((s: any) => s.projectId === project.id);
+    } catch (e) {
+      return [];
+    }
+  }, [project.id]);
+
+  const isCategoryCompleted = React.useCallback((type: string) => {
+    return completedSurveys.some((s: any) => s.type === type);
+  }, [completedSurveys]);
+
+  const isSurveyFilled = React.useMemo(() => {
+    return activeSurveyTypes.every(st => isCategoryCompleted(st.key));
+  }, [activeSurveyTypes, isCategoryCompleted]);
+
+  const isEstimationDisabled = user.role === 'TECHNICIAN' && !isSurveyFilled;
+
+  const showTechSubmitBanner = user.role === 'TECHNICIAN' && project.status !== 'Finalized' && !project.status.includes('Finalized') && completedSurveys.length > 0;
+
+  const handleFinalizeSubmit = () => {
+    const confirm = window.confirm("Are you sure you want to finalize this project survey and submit it to the Admin? You will not be able to edit the survey details after submitting.");
+    if (confirm) {
+      onUpdateStatus(project.id, 'Finalized');
+      onBack();
+    }
+  };
 
   return (
     <div className="min-h-screen pb-12" style={{ background: '#F4F6FA' }}>
@@ -164,6 +197,30 @@ export default function ProjectDetail({ user: _user, project, onBack, onStartSur
       </header>
 
       <main className="max-w-7xl mx-auto px-6 py-8">
+        {/* Admin Approval Banner */}
+        {user.role === 'ADMIN' && project.status === 'Finalized' && (
+          <div className="bg-white border border-slate-200 rounded-3xl p-6 mb-8 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
+            <div>
+              <h3 className="text-xs font-black text-slate-800 uppercase tracking-wide">Awaiting Admin Review</h3>
+              <p className="text-[11px] leading-relaxed text-slate-400 font-semibold mt-0.5">Please check the completed survey report and approve or reject this submission.</p>
+            </div>
+            <div className="flex gap-2 w-full sm:w-auto shrink-0">
+              <button
+                onClick={() => onUpdateStatus(project.id, 'Finalized - Rejected')}
+                className="flex-1 sm:flex-none px-5 py-2.5 rounded-xl font-bold text-xs text-red-600 bg-red-50 hover:bg-red-100 transition-all cursor-pointer"
+              >
+                Reject Survey
+              </button>
+              <button
+                onClick={() => onUpdateStatus(project.id, 'Finalized - Approved')}
+                className="flex-1 sm:flex-none px-5 py-2.5 rounded-xl font-bold text-xs text-white bg-emerald-600 hover:bg-emerald-700 transition-all shadow-sm shadow-emerald-100 cursor-pointer"
+              >
+                Approve Survey
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Hero card */}
         <div
           className="rounded-3xl p-6 mb-8 bg-white border border-slate-100 shadow-sm relative overflow-hidden"
@@ -224,60 +281,112 @@ export default function ProjectDetail({ user: _user, project, onBack, onStartSur
               </div>
             </div>
 
-            {/* View Estimation CTA directly on Card */}
-            <div>
-              <button
-                onClick={onViewEstimation}
-                className="flex items-center gap-2 px-6 py-3.5 rounded-2xl font-bold text-xs text-white shadow-sm hover:opacity-95 transition-all shrink-0"
-                style={{ background: '#1E3A8A' }}
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                </svg>
-                VIEW COST ESTIMATION
-              </button>
+            {/* View Estimation & Survey Summary CTAs directly on Card - Only for non-technician roles */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              {user.role !== 'TECHNICIAN' && (
+                <>
+                  <button
+                    onClick={onViewSurveySummary}
+                    className="flex items-center gap-2 px-6 py-3.5 rounded-2xl font-bold text-xs text-slate-700 bg-slate-100 hover:bg-slate-200 transition-all shrink-0"
+                  >
+                    <svg className="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2z" />
+                    </svg>
+                    VIEW SURVEY REPORT
+                  </button>
+                  <button
+                    onClick={onViewEstimation}
+                    className="flex items-center gap-2 px-6 py-3.5 rounded-2xl font-bold text-xs text-white shadow-sm hover:opacity-95 transition-all shrink-0 justify-center"
+                    style={{ background: '#1E3A8A' }}
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
+                    VIEW COST ESTIMATION
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Survey Types Select */}
-        <section className="mb-8">
-          <div className="flex items-center gap-2.5 mb-5">
-            <h2 className="text-sm font-black text-slate-800 uppercase tracking-wide">Select Security Survey Category</h2>
-            <span
-              className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500"
-            >
-              {activeSurveyTypes.length} {activeSurveyTypes.length === 1 ? 'category' : 'categories'}
-            </span>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            {activeSurveyTypes.map(st => (
-              <button
-                key={st.key}
-                onClick={() => onStartSurvey(st.key)}
-                className="group text-left p-6 rounded-3xl bg-white border border-slate-200 transition-all duration-200 hover:shadow-md hover:border-slate-300 relative overflow-hidden"
+        {/* Survey Types Select - Only visible to Technicians */}
+        {user.role === 'TECHNICIAN' && (
+          <section className="mb-8">
+            <div className="flex items-center gap-2.5 mb-5">
+              <h2 className="text-sm font-black text-slate-800 uppercase tracking-wide">Select Security Survey Category</h2>
+              <span
+                className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500"
               >
-                <div
-                  className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 text-white"
-                  style={{ background: st.gradient, boxShadow: `0 4px 12px ${st.glow}` }}
-                >
-                  {st.icon}
-                </div>
-                <p className="text-xs font-black text-slate-800 mb-1 uppercase tracking-tight">{st.label}</p>
-                <p className="text-[11px] leading-relaxed text-slate-400 font-semibold">{st.desc}</p>
+                {activeSurveyTypes.length} {activeSurveyTypes.length === 1 ? 'category' : 'categories'}
+              </span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+              {activeSurveyTypes.map(st => {
+                const isCompleted = isCategoryCompleted(st.key);
+                const isFinalized = project.status === 'Finalized' || project.status.includes('Finalized');
+                const isClickDisabled = isFinalized || isCompleted;
+                return (
+                  <button
+                    key={st.key}
+                    onClick={isClickDisabled ? undefined : () => onStartSurvey(st.key)}
+                    className={`group text-left p-6 rounded-3xl transition-all duration-200 relative overflow-hidden ${
+                      isClickDisabled ? 'cursor-default' : 'hover:shadow-md cursor-pointer'
+                    }`}
+                    style={{
+                      border: isCompleted ? '1.5px solid #10B981' : '1px solid #E2E8F0',
+                      background: isCompleted ? '#F0FDF4' : '#FFFFFF',
+                    }}
+                  >
+                    <div
+                      className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 text-white"
+                      style={{
+                        background: isCompleted ? 'linear-gradient(135deg, #10B981 0%, #059669 100%)' : st.gradient,
+                        boxShadow: isCompleted ? '0 4px 12px rgba(16, 185, 129, 0.2)' : `0 4px 12px ${st.glow}`
+                      }}
+                    >
+                      {st.icon}
+                    </div>
+                    <p className="text-xs font-black text-slate-800 mb-1 uppercase tracking-tight">{st.label}</p>
+                    <p className="text-[11px] leading-relaxed text-slate-400 font-semibold">{st.desc}</p>
 
-                {/* Arrow indicator */}
-                <div
-                  className="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-all duration-150 text-[#1E3A8A]"
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                  </svg>
-                </div>
-              </button>
-            ))}
+                    {/* Completion status / Arrow indicator */}
+                    {isCompleted ? (
+                      <div className="absolute top-6 right-6 text-emerald-600 flex items-center gap-1 font-bold text-[9px] uppercase tracking-wider bg-emerald-100/50 px-2 py-0.5 rounded-full border border-emerald-200">
+                        <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                        Done
+                      </div>
+                    ) : (
+                      !isClickDisabled && (
+                        <div
+                          className="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-all duration-150 text-[#1E3A8A]"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                          </svg>
+                        </div>
+                      )
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {/* Technician Completion / Finalize Banner */}
+        {showTechSubmitBanner && (
+          <div className="flex justify-end mt-8">
+            <button
+              onClick={handleFinalizeSubmit}
+              className="px-8 py-2.5 rounded-full font-bold text-xs text-white bg-[#1E3A8A] hover:opacity-90 transition-all shadow-sm cursor-pointer"
+            >
+              Submit
+            </button>
           </div>
-        </section>
+        )}
       </main>
     </div>
   );
