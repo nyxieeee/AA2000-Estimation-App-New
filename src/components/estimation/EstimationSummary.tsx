@@ -767,7 +767,7 @@ export default function EstimationSummary({ project, user, onBack }: Props) {
               <div>
                 <p className="text-xs font-bold text-red-700">{aiError}</p>
                 {aiError.includes('Settings') && (
-                  <p className="text-[11px] text-red-500 mt-1">Go to <strong>Settings → AI Configuration</strong> to add your key.</p>
+                  <p className="text-[11px] text-red-500 mt-1">Contact your administrator to add an API key.</p>
                 )}
               </div>
             </div>
