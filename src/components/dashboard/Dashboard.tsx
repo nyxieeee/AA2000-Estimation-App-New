@@ -7,6 +7,7 @@ import NotificationBell from '../notifications/NotificationBell';
 import type { Notification } from '../notifications/NotificationBell';
 import Home from './Home';
 import CompanyDetail from '../projects/CompanyDetail';
+import AccountDropdown from './AccountDropdown';
 
 interface Props {
   user: User;
@@ -276,7 +277,7 @@ export default function Dashboard({
   return (
     <div className="min-h-screen flex" style={{ background: '#F4F6FA' }}>
       <div className="h-screen sticky top-0 z-20">
-        <Sidebar user={user} currentView={view} onNavigate={navigate} onLogout={onLogout} onSettings={onSettings} notifications={notifications} />
+        <Sidebar user={user} currentView={view} onNavigate={navigate} notifications={notifications} />
       </div>
 
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto pb-10">
@@ -324,9 +325,7 @@ export default function Dashboard({
                 </svg>
               </button>
 
-              <div className="w-8 h-8 rounded-full bg-[#1E3A8A] text-white flex items-center justify-center font-bold text-xs">
-                {(user.fullName || user.email || 'User').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
-              </div>
+              <AccountDropdown user={user} onLogout={onLogout} onSettings={onSettings} />
             </div>
           </div>
         </div>

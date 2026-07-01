@@ -13,8 +13,6 @@ interface Props {
   user: User;
   currentView: View;
   onNavigate: (view: View) => void;
-  onLogout: () => void;
-  onSettings?: () => void;
   notifications?: Notification[];
 }
 
@@ -101,7 +99,7 @@ const navIcons: Record<string, React.ReactNode> = {
   ),
 };
 
-export default function Sidebar({ user, currentView, onNavigate, onLogout, onSettings, notifications }: Props) {
+export default function Sidebar({ user, currentView, onNavigate, notifications }: Props) {
   const isAdmin = user.role === 'ADMIN';
 
   const getUnreadCount = (viewName: View) => {
@@ -334,75 +332,7 @@ export default function Sidebar({ user, currentView, onNavigate, onLogout, onSet
         ))}
       </nav>
 
-      {/* Settings & Logout */}
-      <div className="px-3 py-3" style={{ borderTop: '1px solid #E5E7EB' }}>
-        <p className="px-2.5 mb-2 text-[9px] font-bold uppercase tracking-widest text-[#94A3B8]">ACCOUNT</p>
-        
-        {(() => {
-          const totalUnreadCount = notifications ? notifications.filter(n => !n.read).length : 0;
-          return (
-            <button
-              onClick={() => onNavigate('notifications')}
-              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-semibold transition-all duration-150 text-[#64748B]"
-              onMouseEnter={e => {
-                (e.currentTarget as HTMLElement).style.background = '#F8FAFC';
-                (e.currentTarget as HTMLElement).style.color = '#1E293B';
-              }}
-              onMouseLeave={e => {
-                (e.currentTarget as HTMLElement).style.background = 'transparent';
-                (e.currentTarget as HTMLElement).style.color = '#64748B';
-              }}
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-              </svg>
-              Notification
-              {totalUnreadCount > 0 && (
-                <span className="ml-auto px-2 py-0.5 rounded-full text-[9px] font-black tracking-wider bg-red-50 text-red-500 border border-red-100">
-                  {totalUnreadCount}
-                </span>
-              )}
-            </button>
-          );
-        })()}
 
-        <button
-          onClick={onSettings}
-          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-semibold transition-all duration-150 mt-1 text-[#64748B]"
-          onMouseEnter={e => {
-            (e.currentTarget as HTMLElement).style.background = '#F8FAFC';
-            (e.currentTarget as HTMLElement).style.color = '#1E293B';
-          }}
-          onMouseLeave={e => {
-            (e.currentTarget as HTMLElement).style.background = 'transparent';
-            (e.currentTarget as HTMLElement).style.color = '#64748B';
-          }}
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-          </svg>
-          Setting
-        </button>
-
-        <button
-          onClick={onLogout}
-          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-semibold transition-all duration-150 mt-1 text-[#64748B]"
-          onMouseEnter={e => {
-            (e.currentTarget as HTMLElement).style.color = '#EF4444';
-            (e.currentTarget as HTMLElement).style.background = '#FEF2F2';
-          }}
-          onMouseLeave={e => {
-            (e.currentTarget as HTMLElement).style.color = '#64748B';
-            (e.currentTarget as HTMLElement).style.background = 'transparent';
-          }}
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-          </svg>
-          Log Out
-        </button>
-      </div>
     </aside>
   );
 }
