@@ -62,7 +62,7 @@ export default function Login({ onLogin }: Props) {
   };
 
   return (
-    <div className="min-h-screen flex" style={{ background: '#F4F6FA' }}>
+    <div className="min-h-screen flex" style={{ background: 'radial-gradient(ellipse at 50% 30%, rgba(191, 219, 254, 0.35) 0%, #EEF5FF 50%, #F8FAFC 100%)' }}>
       {/* Left Brand Panel */}
       <div
         className="hidden lg:flex flex-col justify-between w-[480px] shrink-0 p-10 relative overflow-hidden"
@@ -128,7 +128,7 @@ export default function Login({ onLogin }: Props) {
       </div>
 
       {/* Right Login Panel */}
-      <div className="flex-1 flex items-center justify-center p-6 bg-[#F4F6FA]">
+      <div className="flex-1 flex items-center justify-center p-6">
         <div className="w-full max-w-sm bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
 
           {/* Mobile logo */}

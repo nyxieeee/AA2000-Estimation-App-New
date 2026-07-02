@@ -110,7 +110,7 @@ export default function Settings({ user, onBack, onLogout, notifications = [] }:
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#F4F6FA] w-full">
+    <div className="flex h-screen overflow-hidden bg-[#F8FAFC] w-full">
       {/* Settings sidebar */}
       <aside
         className="w-60 shrink-0 flex flex-col h-screen sticky top-0 bg-white"
@@ -192,11 +192,10 @@ export default function Settings({ user, onBack, onLogout, notifications = [] }:
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
         {/* Top Header Bar */}
         <div
-          className="px-8 h-16 flex items-center justify-between shrink-0 bg-white w-full"
-          style={{ borderBottom: '1px solid #E5E7EB' }}
+          className="px-8 h-16 flex items-center justify-between shrink-0 bg-gradient-to-r from-white to-blue-50 border-b border-slate-200 shadow-sm w-full"
         >
           {/* App status */}
-          <div className="flex items-center gap-2 bg-[#F4F6FA] border border-[#E5E7EB] rounded-full px-3 py-1.5">
+          <div className="flex items-center gap-2 bg-[#F8FAFC] border border-[#E5E7EB] rounded-full px-3 py-1.5">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
@@ -210,7 +209,7 @@ export default function Settings({ user, onBack, onLogout, notifications = [] }:
               <input
                 type="text"
                 placeholder="SEARCH PROJECTS OR CLIENTS..."
-                className="w-full pl-9 pr-4 py-2 rounded-full text-[10px] tracking-wider font-bold bg-[#F4F6FA] border border-[#E5E7EB] outline-none text-[#1E293B]"
+                className="w-full pl-9 pr-4 py-2 rounded-full text-[10px] tracking-wider font-bold bg-[#F8FAFC] border border-[#E5E7EB] outline-none text-[#1E293B]"
                 onClick={onBack}
                 readOnly
               />

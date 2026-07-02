@@ -624,9 +624,9 @@ export default function EstimationSummary({ project, user, onBack }: Props) {
   );
 
   return (
-    <div className="min-h-screen pb-16" style={{ background: '#F4F6FA' }}>
+    <div className="min-h-screen pb-16" style={{ background: '#F8FAFC' }}>
       {/* Header */}
-      <header className="px-6 py-4 bg-white" style={{ borderBottom: '1px solid #E5E7EB' }}>
+      <header className="px-6 py-4 bg-gradient-to-r from-white to-blue-50 border-b border-slate-200 shadow-sm">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <button
             onClick={onBack}

@@ -275,19 +275,22 @@ export default function Dashboard({
   ];
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#F4F6FA] w-full">
+    <div className="flex h-screen overflow-hidden w-full" style={{ background: 'radial-gradient(ellipse at 20% 20%, rgba(191, 219, 254, 0.25) 0%, transparent 55%), radial-gradient(ellipse at 80% 90%, rgba(191, 219, 254, 0.15) 0%, transparent 55%), linear-gradient(180deg, #EEF5FF 0%, #F8FAFC 40%, #F4F9FF 100%)' }}>
       <div className="h-screen sticky top-0 z-20">
         <Sidebar user={user} currentView={view} onNavigate={navigate} notifications={notifications} />
       </div>
 
-      <main className="flex-1 flex flex-col min-w-0">
+      <main className="flex-1 flex flex-col min-w-0 relative">
+        {/* Soft ambient glow — decorative */}
+        <div className="absolute -top-20 right-0 w-[600px] h-[600px] rounded-full opacity-30 pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(191, 219, 254, 0.5) 0%, transparent 70%)' }} />
+        <div className="absolute -bottom-20 -left-20 w-[500px] h-[500px] rounded-full opacity-20 pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(191, 219, 254, 0.4) 0%, transparent 70%)' }} />
+
         {/* Top Header Bar */}
         <div
-          className="px-8 h-16 flex items-center justify-between shrink-0 bg-white"
-          style={{ borderBottom: '1px solid #E5E7EB' }}
+          className="px-8 h-16 flex items-center justify-between shrink-0 bg-gradient-to-r from-white to-blue-50 border-b border-slate-200 shadow-sm"
         >
           {/* App status */}
-          <div className="flex items-center gap-2 bg-[#F4F6FA] border border-[#E5E7EB] rounded-full px-3 py-1.5">
+          <div className="flex items-center gap-2 bg-[#F8FAFC] border border-[#E5E7EB] rounded-full px-3 py-1.5">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
@@ -303,7 +306,7 @@ export default function Dashboard({
                 placeholder="SEARCH PROJECTS OR CLIENTS..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 rounded-full text-[10px] tracking-wider font-bold bg-[#F4F6FA] border border-[#E5E7EB] outline-none text-[#1E293B]"
+                className="w-full pl-9 pr-4 py-2 rounded-full text-[10px] tracking-wider font-bold bg-[#F8FAFC] border border-[#E5E7EB] outline-none text-[#1E293B]"
               />
               <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#94A3B8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -474,7 +477,7 @@ export default function Dashboard({
                             </div>
                             <span className="text-slate-400">{stage.count} project{stage.count !== 1 ? 's' : ''} · {pct}%</span>
                           </div>
-                          <div className="w-full bg-[#F4F6FA] h-3 rounded-full overflow-hidden">
+                          <div className="w-full bg-[#F8FAFC] h-3 rounded-full overflow-hidden">
                             <div
                               className="h-full rounded-full transition-all duration-700"
                               style={{ width: `${Math.max(pct, pct > 0 ? 4 : 0)}%`, background: stage.color }}

@@ -102,7 +102,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
   render() {
     if (this.state.hasError) {
       return (
-        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F4F6FA', flexDirection: 'column', gap: '16px' }}>
+        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F8FAFC', flexDirection: 'column', gap: '16px' }}>
           <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '24px', padding: '32px', maxWidth: '400px', textAlign: 'center', boxShadow: '0 4px 24px rgba(0,0,0,0.06)' }}>
             <div style={{ fontSize: '32px', marginBottom: '12px' }}>⚠️</div>
             <h2 style={{ color: '#1E3A8A', fontWeight: 900, fontSize: '16px', marginBottom: '8px' }}>Something went wrong</h2>
@@ -364,7 +364,7 @@ export default function App() {
   if (screen === 'create-survey') {
     return (
       <ErrorBoundary>
-        <div className="min-h-screen flex" style={{ background: '#F4F6FA' }}>
+        <div className="min-h-screen flex" style={{ background: '#F8FAFC' }}>
           <Dashboard
             user={user}
             onLogout={handleLogout}
@@ -380,7 +380,7 @@ export default function App() {
             onDeleteProject={handleDeleteProject}
             onUpdateProject={handleUpdateProject}
           />
-          <div className="fixed inset-0 z-50 overflow-y-auto" style={{ background: '#F4F6FA' }}>
+          <div className="fixed inset-0 z-50 overflow-y-auto" style={{ background: '#F8FAFC' }}>
             <CreateSurveyForm onSave={handleSaveSurvey} onExit={handleExitCreateSurvey} initialCompanyName={prefilledCompanyName} />
           </div>
         </div>
