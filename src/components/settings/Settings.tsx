@@ -117,10 +117,10 @@ export default function Settings({ user, onBack, onLogout, notifications = [] }:
         style={{ borderRight: '1px solid #E5E7EB' }}
       >
         {/* Back button */}
-        <div className="px-4 py-5" style={{ borderBottom: '1px solid #E5E7EB' }}>
+        <div className="px-4 h-16 flex items-center" style={{ borderBottom: '1px solid #E5E7EB' }}>
           <button
             onClick={onBack}
-            className="flex items-center gap-2 text-xs font-bold transition-all px-3 py-2.5 rounded-lg w-full text-slate-500 hover:text-slate-800 hover:bg-slate-50"
+            className="w-full h-full flex items-center gap-2 text-xs font-bold transition-all px-3 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-50"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -192,7 +192,7 @@ export default function Settings({ user, onBack, onLogout, notifications = [] }:
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
         {/* Top Header Bar */}
         <div
-          className="px-8 py-4 flex items-center justify-between shrink-0 bg-white w-full"
+          className="px-8 h-16 flex items-center justify-between shrink-0 bg-white w-full"
           style={{ borderBottom: '1px solid #E5E7EB' }}
         >
           {/* App status */}

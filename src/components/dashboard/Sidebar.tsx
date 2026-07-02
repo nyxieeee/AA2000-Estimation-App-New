@@ -195,11 +195,11 @@ export default function Sidebar({ user, currentView, onNavigate, notifications }
       style={{ background: '#FFFFFF', borderRight: '1px solid #E5E7EB' }}
     >
       {/* Brand Logo or Back button - depending on mode */}
-      <div className="px-5 py-5" style={{ borderBottom: '1px solid #E5E7EB' }}>
+      <div className="px-5 h-16 flex items-center" style={{ borderBottom: '1px solid #E5E7EB' }}>
         {isNotificationView ? (
           <button
             onClick={() => onNavigate('home')}
-            className="flex items-center gap-2.5 text-[#64748B] hover:text-[#1E3A8A] transition-colors font-bold text-xs"
+            className="w-full h-full flex items-center gap-2.5 text-[#64748B] hover:text-[#1E3A8A] transition-colors font-bold text-xs"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -208,7 +208,7 @@ export default function Sidebar({ user, currentView, onNavigate, notifications }
           </button>
         ) : (
           <div
-            className="flex items-center gap-2.5 cursor-pointer hover:opacity-85 transition-opacity"
+            className="w-full h-full flex items-center gap-2.5 cursor-pointer hover:opacity-85 transition-opacity"
             onClick={() => onNavigate('home')}
           >
             <div

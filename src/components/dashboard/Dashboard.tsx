@@ -275,15 +275,15 @@ export default function Dashboard({
   ];
 
   return (
-    <div className="min-h-screen flex" style={{ background: '#F4F6FA' }}>
+    <div className="flex h-screen overflow-hidden bg-[#F4F6FA] w-full">
       <div className="h-screen sticky top-0 z-20">
         <Sidebar user={user} currentView={view} onNavigate={navigate} notifications={notifications} />
       </div>
 
-      <main className="flex-1 flex flex-col min-w-0 overflow-y-auto pb-10">
+      <main className="flex-1 flex flex-col min-w-0">
         {/* Top Header Bar */}
         <div
-          className="px-8 py-4 flex items-center justify-between shrink-0 bg-white"
+          className="px-8 h-16 flex items-center justify-between shrink-0 bg-white"
           style={{ borderBottom: '1px solid #E5E7EB' }}
         >
           {/* App status */}
@@ -330,6 +330,7 @@ export default function Dashboard({
           </div>
         </div>
 
+        <div className="flex-1 overflow-y-auto pb-10">
         {selectedCompanyProject ? (
           <CompanyDetail
             user={user}
@@ -811,6 +812,7 @@ export default function Dashboard({
             )}
           </>
         )}
+        </div>
 
         {/* Modals */}
         {showCreate && (
