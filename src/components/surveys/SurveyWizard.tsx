@@ -493,13 +493,29 @@ function DetectionForm({ data, onChange }: { data: any; onChange: any }) {
     <div className="space-y-4">
       <h3 className="font-bold text-lg">Detection Areas</h3>
       <div className="grid grid-cols-2 gap-4">
-        <div className="col-span-2">
+        <div>
           <label className="block text-xs font-bold text-slate-600 mb-1.5">System Type</label>
           <select value={data.systemType || ''} onChange={e => onChange('systemType', e.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200/60 bg-white/50 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 focus:outline-none transition-all">
             <option value="">Select...</option>
             <option value="Conventional">Conventional</option>
             <option value="Addressable">Addressable</option>
             <option value="Wireless">Wireless</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-xs font-bold text-slate-600 mb-1.5">Preferred Brand</label>
+          <select value={data.preferredBrand || ''} onChange={e => onChange('preferredBrand', e.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200/60 bg-white/50 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 focus:outline-none transition-all">
+            <option value="">Select brand...</option>
+            <option value="ASENWARE">ASENWARE</option>
+            <option value="EDWARDS">EDWARDS</option>
+            <option value="GAMEWELL BY HONEYWELL">GAMEWELL BY HONEYWELL</option>
+            <option value="GST">GST</option>
+            <option value="HOCHIKI">HOCHIKI</option>
+            <option value="HONEYWELL">HONEYWELL</option>
+            <option value="HORING-LIH">HORING-LIH</option>
+            <option value="NOTIFIER">NOTIFIER</option>
+            <option value="SIMPLEX">SIMPLEX</option>
+            <option value="TYY">TYY</option>
           </select>
         </div>
         <div>
