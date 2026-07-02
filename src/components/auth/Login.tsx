@@ -40,16 +40,18 @@ export default function Login({ onLogin }: Props) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<{ email?: boolean; password?: boolean }>({});
   const [role, setRole] = useState<'technician' | 'sales' | 'admin'>('technician');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    if (password.length < 1) {
-      setError('Please enter a password');
-      return;
-    }
+    const errors: { email?: boolean; password?: boolean } = {};
+    if (!email.trim()) errors.email = true;
+    if (!password.trim()) errors.password = true;
+    setFieldErrors(errors);
+    if (Object.keys(errors).length > 0) return;
     setLoading(true);
     await new Promise(r => setTimeout(r, 600));
     setLoading(false);
@@ -177,10 +179,9 @@ export default function Login({ onLogin }: Props) {
               <input
                 type="email"
                 value={email}
-                onChange={e => setEmail(e.target.value)}
+                onChange={e => { setEmail(e.target.value); setFieldErrors(prev => ({ ...prev, email: false })); }}
               placeholder={role === 'admin' ? 'admin@aa2000.com' : role === 'sales' ? 'sales@aa2000.com' : 'tech@aa2000.com'}
-                required
-                className="w-full px-4 py-3 rounded-xl text-xs font-semibold bg-slate-50 border border-slate-200 outline-none text-slate-700 focus:border-[#1E3A8A] focus:bg-white"
+                className={"w-full px-4 py-3 rounded-xl text-xs font-semibold bg-slate-50 border outline-none text-slate-700 focus:bg-white " + (fieldErrors.email ? 'border-red-400' : 'border-slate-200 focus:border-[#1E3A8A]')}
               />
             </div>
             <div>
@@ -190,10 +191,9 @@ export default function Login({ onLogin }: Props) {
               <input
                 type="password"
                 value={password}
-                onChange={e => setPassword(e.target.value)}
+                onChange={e => { setPassword(e.target.value); setFieldErrors(prev => ({ ...prev, password: false })); }}
                 placeholder="Enter your password"
-                required
-                className="w-full px-4 py-3 rounded-xl text-xs font-semibold bg-slate-50 border border-slate-200 outline-none text-slate-700 focus:border-[#1E3A8A] focus:bg-white"
+                className={"w-full px-4 py-3 rounded-xl text-xs font-semibold bg-slate-50 border outline-none text-slate-700 focus:bg-white " + (fieldErrors.password ? 'border-red-400' : 'border-slate-200 focus:border-[#1E3A8A]')}
               />
             </div>
 

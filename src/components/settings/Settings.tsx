@@ -113,7 +113,7 @@ export default function Settings({ user, onBack, onLogout, notifications = [] }:
     <div className="flex h-screen overflow-hidden bg-[#F8FAFC] w-full">
       {/* Settings sidebar */}
       <aside
-        className="w-60 shrink-0 flex flex-col h-screen sticky top-0 bg-white"
+        className="w-60 shrink-0 flex flex-col h-screen sticky top-0 bg-indigo-50"
         style={{ borderRight: '1px solid #E5E7EB' }}
       >
         {/* Back button */}

@@ -192,7 +192,7 @@ export default function Sidebar({ user, currentView, onNavigate, notifications }
   return (
     <aside
       className="w-60 flex flex-col h-full shrink-0 overflow-hidden"
-      style={{ background: '#FFFFFF', borderRight: '1px solid #E5E7EB' }}
+      style={{ background: '#EEF2FF', borderRight: '1px solid #E5E7EB' }}
     >
       {/* Brand Logo or Back button - depending on mode */}
       <div className="px-5 h-16 flex items-center" style={{ borderBottom: '1px solid #E5E7EB' }}>
