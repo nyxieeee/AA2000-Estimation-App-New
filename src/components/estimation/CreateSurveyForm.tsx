@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import LeafletMap from '../utils/LeafletMap';
 
 interface Props {
   onSave: (data: SurveyFormData) => void;
@@ -66,7 +65,6 @@ const STEPS = [
   { label: 'Company & Project', icon: '🏢' },
   { label: 'PROJECT NAME',      icon: '🛡️' },
   { label: 'Client Info',       icon: '👤' },
-  { label: 'Location',          icon: '📍' },
 ];
 
 export default function CreateSurveyForm({ onSave, onExit, initialCompanyName = '' }: Props) {
@@ -75,7 +73,7 @@ export default function CreateSurveyForm({ onSave, onExit, initialCompanyName = 
     projectName: '',
     clientEmail: '',
     clientName: '',
-    clientContactNumber: '+63',
+    clientContactNumber: '',
     locationName: '',
     latitude: 14.5995,
     longitude: 120.9842,
@@ -94,25 +92,13 @@ export default function CreateSurveyForm({ onSave, onExit, initialCompanyName = 
         : [...prev.systemTypes, type],
     }));
   };
-  const [mapClicked, setMapClicked] = useState(false);
   const [step, setStep] = useState(0);
 
   const update = (field: keyof SurveyFormData, value: string) => {
     let finalValue = value;
     if (field === 'clientContactNumber') {
-      if (!value.startsWith('+63')) {
-        if (value.length < 3) {
-          finalValue = '+63';
-        } else {
-          if (value.startsWith('0')) {
-            finalValue = '+63' + value.slice(1);
-          } else if (value.startsWith('9')) {
-            finalValue = '+63' + value;
-          } else {
-            finalValue = '+63' + value.replace(/^\+?(63)?/, '');
-          }
-        }
-      }
+      const digitsOnly = value.replace(/\D/g, '');
+      finalValue = digitsOnly.slice(0, 11);
     }
     setForm(prev => ({ ...prev, [field]: finalValue }));
   };
@@ -345,47 +331,37 @@ export default function CreateSurveyForm({ onSave, onExit, initialCompanyName = 
                   </div>
                   <div>
                     <label style={labelStyle}>Client Contact Number</label>
-                    <input value={form.clientContactNumber} onChange={e => update('clientContactNumber', e.target.value)} style={inputStyle} placeholder="e.g. +63 917 123 4567" required />
+                    <input
+                      type="tel"
+                      pattern="[0-9]{11}"
+                      maxLength={11}
+                      title="Please enter exactly 11 digits (e.g., 09171234567)"
+                      value={form.clientContactNumber}
+                      onChange={e => update('clientContactNumber', e.target.value)}
+                      style={inputStyle}
+                      placeholder="e.g. 09171234567"
+                      required
+                    />
                   </div>
                 </div>
                 <div>
                   <label style={labelStyle}>Client Email Address</label>
-                  <input type="email" value={form.clientEmail} onChange={e => update('clientEmail', e.target.value)} style={inputStyle} placeholder="juan.delacruz@company.ph" required />
+                  <input
+                    type="email"
+                    pattern="[^@\s]+@[^@\s]+\.[^@\s]+"
+                    title="Please enter a valid email address containing '@' and a dot (e.g., name@domain.com)"
+                    value={form.clientEmail}
+                    onChange={e => update('clientEmail', e.target.value)}
+                    style={inputStyle}
+                    placeholder="juan.delacruz@company.ph"
+                    required
+                  />
                 </div>
               </div>
             </div>
           )}
 
-          {/* Step 3: Location Map */}
-          {step === 3 && (
-            <div style={sectionStyle}>
-              <p className="text-[10px] font-bold uppercase tracking-wider mb-4 text-[#1D4ED8]">
-                📍 PROJECT COORDINATES & MAP PIN
-              </p>
-              <div className="flex items-center gap-3 mb-3">
-                <span className="text-[11px] text-slate-400 font-semibold">Click on the map area below to drop a pin marker</span>
-                <span
-                  className="font-mono text-xs px-2 py-0.5 rounded bg-slate-50 border border-slate-200 text-slate-600 font-bold"
-                >
-                  {form.latitude}, {form.longitude}
-                </span>
-              </div>
-              <LeafletMap
-                onLocationSelect={(lat, lng, address) => {
-                  setForm(prev => ({
-                    ...prev,
-                    latitude: parseFloat(lat.toFixed(4)),
-                    longitude: parseFloat(lng.toFixed(4)),
-                    locationName: address,
-                  }));
-                  setMapClicked(true);
-                }}
-                initialLat={form.latitude}
-                initialLng={form.longitude}
-                height="240px"
-              />
-            </div>
-          )}
+
 
 
 

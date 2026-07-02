@@ -13,27 +13,14 @@ export default function CreateProjectModal({ onClose, onCreate, isCompanyMode = 
   const [name, setName] = useState('');
   const [client, setClient] = useState('');
   const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('+63');
+  const [phone, setPhone] = useState('');
   const [location, setLocation] = useState('');
   const [buildingType, setBuildingType] = useState('Office');
   const [floors, setFloors] = useState(1);
 
   const handlePhoneChange = (val: string) => {
-    if (!val.startsWith('+63')) {
-      if (val.length < 3) {
-        setPhone('+63');
-      } else {
-        if (val.startsWith('0')) {
-          setPhone('+63' + val.slice(1));
-        } else if (val.startsWith('9')) {
-          setPhone('+63' + val);
-        } else {
-          setPhone('+63' + val.replace(/^\+?(63)?/, ''));
-        }
-      }
-    } else {
-      setPhone(val);
-    }
+    const digitsOnly = val.replace(/\D/g, '');
+    setPhone(digitsOnly.slice(0, 11));
   };
 
   // Map coordinate selection states
@@ -124,11 +111,30 @@ export default function CreateProjectModal({ onClose, onCreate, isCompanyMode = 
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label style={labelStyle}>Client Email</label>
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)} style={inputStyle} placeholder="client@company.com" required />
+              <input
+                type="email"
+                pattern="[^@\s]+@[^@\s]+\.[^@\s]+"
+                title="Please enter a valid email address containing '@' and a dot (e.g., name@domain.com)"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                style={inputStyle}
+                placeholder="client@company.com"
+                required
+              />
             </div>
              <div>
               <label style={labelStyle}>Client Contact Number</label>
-              <input value={phone} onChange={e => handlePhoneChange(e.target.value)} style={inputStyle} placeholder="e.g. +63 917 123 4567" required />
+              <input
+                type="tel"
+                pattern="[0-9]{11}"
+                maxLength={11}
+                title="Please enter exactly 11 digits (e.g., 09171234567)"
+                value={phone}
+                onChange={e => handlePhoneChange(e.target.value)}
+                style={inputStyle}
+                placeholder="e.g. 09171234567"
+                required
+              />
             </div>
           </div>
 
