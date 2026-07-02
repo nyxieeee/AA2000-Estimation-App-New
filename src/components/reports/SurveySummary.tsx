@@ -3,9 +3,10 @@ import type { Project } from '../../App';
 interface Props {
   project: Project;
   onBack: () => void;
+  onViewEstimation?: () => void;
 }
 
-export default function SurveySummary({ project, onBack }: Props) {
+export default function SurveySummary({ project, onBack, onViewEstimation }: Props) {
   const surveys = JSON.parse(localStorage.getItem('aa2000_surveys') || '[]')
     .filter((s: any) => s.projectId === project.id);
 
@@ -42,13 +43,26 @@ export default function SurveySummary({ project, onBack }: Props) {
                 <span className="text-xs text-slate-400">{new Date(survey.createdAt).toLocaleDateString()}</span>
               </div>
               {survey.data && Object.keys(survey.data).length > 0 ? (
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {Object.entries(survey.data).filter(([_, v]) => v !== '' && v !== 0 && v !== false && v !== null && v !== undefined).map(([key, value]) => (
-                    <div key={key} className="p-3 rounded-xl bg-slate-50 border border-slate-200">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">{key}</span>
-                      <p className="text-sm font-semibold text-slate-800 mt-1">{String(value)}</p>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {Object.entries(survey.data).filter(([_, v]) => v !== '' && v !== 0 && v !== false && v !== null && v !== undefined).map(([key, value]) => (
+                      <div key={key} className="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">{key}</span>
+                        <p className="text-sm font-semibold text-slate-800 mt-1">{String(value)}</p>
+                      </div>
+                    ))}
+                  </div>
+                  {onViewEstimation && (
+                    <div className="flex justify-end pt-2">
+                      <button
+                        onClick={onViewEstimation}
+                        className="px-6 py-3 rounded-xl text-xs font-bold text-white transition-all shadow-sm active:scale-95 hover:opacity-90"
+                        style={{ backgroundColor: '#1E3A8A' }}
+                      >
+                        View Cost Estimation
+                      </button>
                     </div>
-                  ))}
+                  )}
                 </div>
               ) : (
                 <p className="text-slate-400 text-sm">No data recorded.</p>

@@ -223,22 +223,22 @@ export default function ProjectDetail({ user, project, onBack, onStartSurvey, on
           className="rounded-3xl p-6 mb-8 bg-white border border-slate-100 shadow-sm relative overflow-hidden"
         >
           <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div>
+            <div className="min-w-0 flex-1">
               <h1 className="text-xl font-black text-[#0F172A]">{project.name}</h1>
               <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-wider">{project.clientName}</p>
 
-              <div className="flex flex-wrap items-center gap-6 mt-6">
+              <div className="mt-6 space-y-4">
                 {/* Location */}
-                <div className="flex items-center gap-2.5">
+                <div className="flex items-start gap-2.5 min-w-0">
                   <div
-                    className="w-8 h-8 rounded-lg flex items-center justify-center bg-slate-50 border border-slate-100 text-[#1E3A8A]"
+                    className="w-8 h-8 rounded-lg flex items-center justify-center bg-slate-50 border border-slate-100 text-[#1E3A8A] shrink-0"
                   >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
                       <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
                     </svg>
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Location</p>
                     <p className="text-xs font-semibold text-slate-600 flex items-center gap-2 flex-wrap">
                       <span>{project.location}</span>
@@ -260,67 +260,70 @@ export default function ProjectDetail({ user, project, onBack, onStartSurvey, on
                   </div>
                 </div>
 
-                {/* Client Contact Phone */}
-                <div className="flex items-center gap-2.5">
-                  <div
-                    className="w-8 h-8 rounded-lg flex items-center justify-center bg-slate-50 border border-slate-100 text-[#1E3A8A]"
-                  >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-2.824-1.47-5.112-3.758-6.58-6.58l1.293-.97c.362-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H3.562A2.25 2.25 0 001.312 4.5v2.25z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Client Contact</p>
-                    <p className="text-xs font-semibold text-slate-600">{project.clientPhone || 'Not set'}</p>
-                  </div>
-                </div>
-
-                {/* Client Email (Admin Only) */}
-                {user.role === 'ADMIN' && (
+                {/* Details row */}
+                <div className="flex flex-wrap items-center gap-6">
+                  {/* Client Contact Phone */}
                   <div className="flex items-center gap-2.5">
                     <div
                       className="w-8 h-8 rounded-lg flex items-center justify-center bg-slate-50 border border-slate-100 text-[#1E3A8A]"
                     >
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-2.824-1.47-5.112-3.758-6.58-6.58l1.293-.97c.362-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H3.562A2.25 2.25 0 001.312 4.5v2.25z" />
                       </svg>
                     </div>
                     <div>
-                      <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Client Email</p>
-                      <p className="text-xs font-semibold text-slate-600">{project.clientEmail || 'Not set'}</p>
+                      <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Client Contact</p>
+                      <p className="text-xs font-semibold text-slate-600">{project.clientPhone || 'Not set'}</p>
                     </div>
                   </div>
-                )}
 
-                {/* Building type */}
-                {project.buildingType && (
+                  {/* Client Email (Admin Only) */}
+                  {user.role === 'ADMIN' && (
+                    <div className="flex items-center gap-2.5">
+                      <div
+                        className="w-8 h-8 rounded-lg flex items-center justify-center bg-slate-50 border border-slate-100 text-[#1E3A8A]"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Client Email</p>
+                        <p className="text-xs font-semibold text-slate-600">{project.clientEmail || 'Not set'}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Building type */}
+                  {project.buildingType && (
+                    <div className="flex items-center gap-2.5">
+                      <div
+                        className="w-8 h-8 rounded-lg flex items-center justify-center bg-slate-50 border border-slate-100 text-[#1E3A8A]"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Building</p>
+                        <p className="text-xs font-semibold text-slate-600">{project.buildingType} · {project.floors} floor(s)</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Start date */}
                   <div className="flex items-center gap-2.5">
                     <div
                       className="w-8 h-8 rounded-lg flex items-center justify-center bg-slate-50 border border-slate-100 text-[#1E3A8A]"
                     >
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
                       </svg>
                     </div>
                     <div>
-                      <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Building</p>
-                      <p className="text-xs font-semibold text-slate-600">{project.buildingType} · {project.floors} floor(s)</p>
+                      <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Start Date</p>
+                      <p className="text-xs font-semibold text-slate-600">{project.startDate || 'Not set'}</p>
                     </div>
-                  </div>
-                )}
-
-                {/* Start date */}
-                <div className="flex items-center gap-2.5">
-                  <div
-                    className="w-8 h-8 rounded-lg flex items-center justify-center bg-slate-50 border border-slate-100 text-[#1E3A8A]"
-                  >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Start Date</p>
-                    <p className="text-xs font-semibold text-slate-600">{project.startDate || 'Not set'}</p>
                   </div>
                 </div>
               </div>
@@ -338,16 +341,6 @@ export default function ProjectDetail({ user, project, onBack, onStartSurvey, on
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2z" />
                     </svg>
                     VIEW SURVEY REPORT
-                  </button>
-                  <button
-                    onClick={onViewEstimation}
-                    className="flex items-center gap-2 px-6 py-3.5 rounded-2xl font-bold text-xs text-white shadow-sm hover:opacity-95 transition-all shrink-0 justify-center"
-                    style={{ background: '#1E3A8A' }}
-                  >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                    </svg>
-                    VIEW COST ESTIMATION
                   </button>
                 </>
               ) : (

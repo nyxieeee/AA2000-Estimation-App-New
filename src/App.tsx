@@ -458,6 +458,7 @@ export default function App() {
         <SurveySummary
           project={currentProject}
           onBack={() => setScreen('project-detail')}
+          onViewEstimation={handleViewEstimation}
         />
       </ErrorBoundary>
     );

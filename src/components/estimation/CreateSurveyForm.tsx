@@ -70,7 +70,6 @@ const BUILDING_TYPES = [
 const STEPS = [
   { label: 'Company & Project', icon: '🏢' },
   { label: 'System Types',      icon: '🛡️' },
-  { label: 'Client Info',       icon: '👤' },
 ];
 
 export default function CreateSurveyForm({
@@ -339,49 +338,7 @@ export default function CreateSurveyForm({
             </div>
           )}
 
-          {/* Step 2: Client Info */}
-          {step === 2 && (
-            <div style={sectionStyle}>
-              <p className="text-[10px] font-bold uppercase tracking-wider mb-4 text-[#1D4ED8]">
-                👤 CLIENT REPRESENTATIVE INFO
-              </p>
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label style={labelStyle}>Client Name (Contact Person)</label>
-                    <input value={form.clientName} onChange={e => update('clientName', e.target.value)} style={inputStyle} placeholder="e.g. Juan Dela Cruz" required />
-                  </div>
-                  <div>
-                    <label style={labelStyle}>Client Contact Number</label>
-                    <input
-                      type="tel"
-                      pattern="[0-9]{11}"
-                      maxLength={11}
-                      title="Please enter exactly 11 digits (e.g., 09171234567)"
-                      value={form.clientContactNumber}
-                      onChange={e => update('clientContactNumber', e.target.value)}
-                      style={inputStyle}
-                      placeholder="e.g. 09171234567"
-                      required
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label style={labelStyle}>Client Email Address</label>
-                  <input
-                    type="email"
-                    pattern="[^@\s]+@[^@\s]+\.[^@\s]+"
-                    title="Please enter a valid email address containing '@' and a dot (e.g., name@domain.com)"
-                    value={form.clientEmail}
-                    onChange={e => update('clientEmail', e.target.value)}
-                    style={inputStyle}
-                    placeholder="juan.delacruz@company.ph"
-                    required
-                  />
-                </div>
-              </div>
-            </div>
-          )}
+
 
 
 
