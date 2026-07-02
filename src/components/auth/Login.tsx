@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { User } from '../../App';
+import logo from '../../images/aa2000 logo.png';
 
 interface Props {
   onLogin: (user: User) => void;
@@ -67,7 +68,7 @@ export default function Login({ onLogin }: Props) {
     <div className="min-h-screen flex" style={{ background: 'radial-gradient(ellipse at 50% 30%, rgba(191, 219, 254, 0.35) 0%, #EEF5FF 50%, #F8FAFC 100%)' }}>
       {/* Left Brand Panel */}
       <div
-        className="hidden lg:flex flex-col justify-between w-[480px] shrink-0 p-10 relative overflow-hidden"
+        className="hidden lg:flex flex-col w-[480px] shrink-0 p-10 relative overflow-hidden"
         style={{ background: '#FFFFFF', borderRight: '1px solid #E5E7EB' }}
       >
         {/* Grid pattern background */}
@@ -80,22 +81,13 @@ export default function Login({ onLogin }: Props) {
         />
 
         {/* Logo */}
-        <div className="relative z-10">
-          <div className="flex items-center gap-3 mb-2">
-            <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-black text-lg"
-              style={{ background: '#1E3A8A' }}
-            >
-              A
-            </div>
-            <span className="text-xl font-black tracking-tight text-[#1E3A8A]">AA2000</span>
-          </div>
-          <p className="text-sm font-bold text-[#94A3B8]" style={{ letterSpacing: '0.1em' }}>CONNECT SURVEY PLATFORM</p>
+        <div className="flex items-center justify-center mb-4">
+          <img src={logo} alt="AA2000 Logo" className="h-38 object-contain" />
         </div>
 
         {/* Headline */}
-        <div className="relative z-10">
-          <h1 className="text-4xl font-black leading-tight mb-4 text-[#0F172A]">
+        <div className="relative z-10 mt-2">
+          <h1 className="text-5xl font-black leading-tight mb-4 text-[#0F172A]">
             Survey smarter,<br />
             <span style={{ color: '#1E3A8A' }}>
               estimate faster.
@@ -106,17 +98,17 @@ export default function Login({ onLogin }: Props) {
           </p>
 
           {/* Feature list */}
-          <div className="space-y-4">
+          <div className="space-y-3">
             {features.map((f) => (
-              <div key={f.label} className="flex items-start gap-3">
+              <div key={f.label} className="flex items-start gap-4">
                 <div
-                  className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-slate-50 border border-slate-100 text-[#1E3A8A]"
+                  className="w-12 h-12 rounded-lg flex items-center justify-center shrink-0 bg-slate-50 border border-slate-100 text-[#1E3A8A]"
                 >
                   {f.icon}
                 </div>
                 <div>
-                  <p className="text-xs font-black text-[#1E293B]">{f.label}</p>
-                  <p className="text-[11px] text-slate-400 font-bold mt-0.5">{f.desc}</p>
+                  <p className="text-sm font-black text-[#1E293B]">{f.label}</p>
+                  <p className="text-xs text-slate-400 font-bold mt-1">{f.desc}</p>
                 </div>
               </div>
             ))}
@@ -124,7 +116,7 @@ export default function Login({ onLogin }: Props) {
         </div>
 
         {/* Footer */}
-        <div className="relative z-10">
+        <div className="relative z-10 mt-auto pt-6">
           <p className="text-[10px] font-bold text-[#94A3B8]">© 2026 AA2000 CONNECT. All rights reserved.</p>
         </div>
       </div>
@@ -135,13 +127,7 @@ export default function Login({ onLogin }: Props) {
 
           {/* Mobile logo */}
           <div className="lg:hidden flex items-center gap-2.5 mb-8 justify-center">
-            <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-black"
-              style={{ background: '#1E3A8A' }}
-            >
-              A
-            </div>
-            <span className="text-xl font-black text-[#1E3A8A]">AA2000</span>
+            <img src={logo} alt="AA2000 Logo" className="h-12 object-contain" />
           </div>
 
           <div className="mb-6">
