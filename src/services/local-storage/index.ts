@@ -114,11 +114,26 @@ export class LocalStorageService extends ApiClient {
 
   // Project operations
   async getProjects(params?: QueryParams) {
-    return this.get<any>('/projects', params);
+    const projects = JSON.parse(localStorage.getItem('aa2000_projects') || '[]');
+    return {
+      success: true,
+      data: projects,
+    };
   }
 
   async getProject(id: string) {
-    return this.get<any>(`/projects/${id}`);
+    const projects = JSON.parse(localStorage.getItem('aa2000_projects') || '[]');
+    const project = projects.find((p: any) => p.id === id);
+    if (project) {
+      return {
+        success: true,
+        data: project,
+      };
+    }
+    return {
+      success: false,
+      error: { message: 'Project not found', code: 'NOT_FOUND' },
+    };
   }
 
   async createProject(data: any) {

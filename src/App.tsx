@@ -362,6 +362,10 @@ export default function App() {
   }
 
   if (screen === 'create-survey') {
+    const companyProject = prefilledCompanyName
+      ? projects.find(p => p.buildingType === 'Other' && p.name === prefilledCompanyName)
+      : undefined;
+
     return (
       <ErrorBoundary>
         <div className="min-h-screen flex" style={{ background: '#F8FAFC' }}>
@@ -380,8 +384,23 @@ export default function App() {
             onDeleteProject={handleDeleteProject}
             onUpdateProject={handleUpdateProject}
           />
+<<<<<<< Updated upstream
           <div className="fixed inset-0 z-50 overflow-y-auto" style={{ background: '#F8FAFC' }}>
             <CreateSurveyForm onSave={handleSaveSurvey} onExit={handleExitCreateSurvey} initialCompanyName={prefilledCompanyName} />
+=======
+          <div className="fixed inset-0 z-50 overflow-y-auto" style={{ background: '#F4F6FA' }}>
+            <CreateSurveyForm
+              onSave={handleSaveSurvey}
+              onExit={handleExitCreateSurvey}
+              initialCompanyName={prefilledCompanyName}
+              initialLocationName={companyProject?.location}
+              initialLatitude={companyProject?.latitude}
+              initialLongitude={companyProject?.longitude}
+              initialClientName={companyProject?.clientName}
+              initialClientEmail={companyProject?.clientEmail}
+              initialClientContactNumber={companyProject?.clientPhone}
+            />
+>>>>>>> Stashed changes
           </div>
         </div>
       </ErrorBoundary>
@@ -432,6 +451,7 @@ export default function App() {
           project={currentProject}
           user={user}
           onBack={() => setScreen('project-detail')}
+          onUpdateStatus={handleUpdateProjectStatus}
         />
       </ErrorBoundary>
     );

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { SurveyType } from '../../App';
 import { getDataService } from '../../services/factory';
 
@@ -74,6 +74,26 @@ export default function SurveyWizard({ projectId, surveyType, onComplete, onBack
   const config = SURVEY_CONFIG[surveyType];
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState<Record<string, any>>({});
+
+  useEffect(() => {
+    const loadProjectDetails = async () => {
+      try {
+        const svc = getDataService();
+        const response = await svc.getProject(projectId);
+        if (response.success && response.data) {
+          const project = response.data;
+          setFormData(prev => ({
+            ...prev,
+            floors: project.floors || 1,
+            buildingType: project.buildingType || '',
+          }));
+        }
+      } catch (err) {
+        console.error('Failed to load project details for survey:', err);
+      }
+    };
+    loadProjectDetails();
+  }, [projectId]);
 
   const step = config.steps[currentStep];
   const isFirst = currentStep === 0;
@@ -226,16 +246,6 @@ function BuildingForm({ data, onChange }: { data: any; onChange: any }) {
       <h3 className="font-bold text-lg">Building Information</h3>
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-xs font-bold text-slate-600 mb-1.5">Number of Floors</label>
-          <input
-            type="number"
-            min={1}
-            value={data.floors || 1}
-            onChange={e => handleDimensionChange('floors', Number(e.target.value))}
-            className="w-full px-4 py-3 rounded-xl border border-slate-200/60 bg-white/50 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 focus:outline-none transition-all"
-          />
-        </div>
-        <div>
           <label className="block text-xs font-bold text-slate-600 mb-1.5">Is New Building?</label>
           <select
             value={data.isNew ?? ''}
@@ -245,6 +255,35 @@ function BuildingForm({ data, onChange }: { data: any; onChange: any }) {
             <option value="">Select...</option>
             <option value="true">Yes</option>
             <option value="false">No (Existing)</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-xs font-bold text-slate-600 mb-1.5">Building Type</label>
+          <select
+            value={data.buildingType || ''}
+            onChange={e => onChange('buildingType', e.target.value)}
+            className="w-full px-4 py-3 rounded-xl border border-slate-200/60 bg-white/50 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 focus:outline-none transition-all"
+          >
+            <option value="">Select...</option>
+            <option value="Office">Office</option>
+            <option value="Office Building">Office Building</option>
+            <option value="Retail">Retail</option>
+            <option value="Mall / Retail">Mall / Retail</option>
+            <option value="Warehouse">Warehouse</option>
+            <option value="Warehouse / Logistics">Warehouse / Logistics</option>
+            <option value="School">School</option>
+            <option value="School / University">School / University</option>
+            <option value="Hospital">Hospital</option>
+            <option value="Hospital / Medical">Hospital / Medical</option>
+            <option value="Residential">Residential</option>
+            <option value="Residential / Condo">Residential / Condo</option>
+            <option value="Hotel / Hospitality">Hotel / Hospitality</option>
+            <option value="Government / BPO">Government / BPO</option>
+            <option value="Industrial">Industrial</option>
+            <option value="Industrial / Factory">Industrial / Factory</option>
+            <option value="Parking Structure">Parking Structure</option>
+            <option value="Data Center">Data Center</option>
+            <option value="Other">Other</option>
           </select>
         </div>
 
@@ -298,6 +337,16 @@ function BuildingForm({ data, onChange }: { data: any; onChange: any }) {
           />
         </div>
 
+        <div>
+          <label className="block text-xs font-bold text-slate-600 mb-1.5">Number of Floors</label>
+          <input
+            type="number"
+            min={1}
+            value={data.floors || 1}
+            onChange={e => handleDimensionChange('floors', Number(e.target.value))}
+            className="w-full px-4 py-3 rounded-xl border border-slate-200/60 bg-white/50 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 focus:outline-none transition-all"
+          />
+        </div>
         <div>
           <label className="block text-xs font-bold text-slate-600 mb-1.5">Number of Rooms</label>
           <input
@@ -356,6 +405,19 @@ function CameraForm({ data, onChange }: { data: any; onChange: any }) {
             <option value="Both">Both</option>
           </select>
         </div>
+        <div>
+          <label className="block text-xs font-bold text-slate-600 mb-1.5">Preferred Brand</label>
+          <select value={data.preferredBrand || ''} onChange={e => onChange('preferredBrand', e.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200/60 bg-white/50 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 focus:outline-none transition-all">
+            <option value="">Select...</option>
+            <option value="Hikvision">Hikvision</option>
+            <option value="Dahua">Dahua</option>
+            <option value="Avtech">Avtech</option>
+            <option value="Bosch">Bosch</option>
+            <option value="Ezviz">Ezviz</option>
+            <option value="Honeywell">Honeywell</option>
+            <option value="Panasonic">Panasonic</option>
+          </select>
+        </div>
       </div>
     </div>
   );
@@ -366,7 +428,7 @@ function CCTVInfraForm({ data, onChange }: { data: any; onChange: any }) {
     <div className="space-y-4">
       <h3 className="font-bold text-lg">Infrastructure & Cabling</h3>
       <div className="grid grid-cols-2 gap-4">
-        <div className="col-span-2">
+        <div>
           <label className="block text-xs font-bold text-slate-600 mb-1.5">Cable Type</label>
           <select value={data.cableType || ''} onChange={e => onChange('cableType', e.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200/60 bg-white/50 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 focus:outline-none transition-all">
             <option value="">Select...</option>
@@ -375,6 +437,17 @@ function CCTVInfraForm({ data, onChange }: { data: any; onChange: any }) {
             <option value="Cat6a">Cat6a</option>
             <option value="Fiber">Fiber Optic</option>
             <option value="Coax">Coaxial</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-xs font-bold text-slate-600 mb-1.5">Preferred Cabling Brand</label>
+          <select value={data.preferredCableBrand || ''} onChange={e => onChange('preferredCableBrand', e.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200/60 bg-white/50 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 focus:outline-none transition-all">
+            <option value="">Select...</option>
+            <option value="Commscope">Commscope</option>
+            <option value="Panduit">Panduit</option>
+            <option value="Alantek">Alantek</option>
+            <option value="Systimax">Systimax</option>
+            <option value="Linkbasic">Linkbasic</option>
           </select>
         </div>
         <div className="col-span-2">

@@ -4,6 +4,12 @@ interface Props {
   onSave: (data: SurveyFormData) => void;
   onExit: () => void;
   initialCompanyName?: string;
+  initialLocationName?: string;
+  initialLatitude?: number;
+  initialLongitude?: number;
+  initialClientName?: string;
+  initialClientEmail?: string;
+  initialClientContactNumber?: string;
 }
 
 export type SystemType =
@@ -63,20 +69,30 @@ const BUILDING_TYPES = [
 
 const STEPS = [
   { label: 'Company & Project', icon: '🏢' },
-  { label: 'PROJECT NAME',      icon: '🛡️' },
+  { label: 'System Types',      icon: '🛡️' },
   { label: 'Client Info',       icon: '👤' },
 ];
 
-export default function CreateSurveyForm({ onSave, onExit, initialCompanyName = '' }: Props) {
+export default function CreateSurveyForm({
+  onSave,
+  onExit,
+  initialCompanyName = '',
+  initialLocationName = '',
+  initialLatitude,
+  initialLongitude,
+  initialClientName = '',
+  initialClientEmail = '',
+  initialClientContactNumber = '',
+}: Props) {
   const [form, setForm] = useState<SurveyFormData>({
     companyName: initialCompanyName,
     projectName: '',
-    clientEmail: '',
-    clientName: '',
-    clientContactNumber: '',
-    locationName: '',
-    latitude: 14.5995,
-    longitude: 120.9842,
+    clientEmail: initialClientEmail,
+    clientName: initialClientName,
+    clientContactNumber: initialClientContactNumber,
+    locationName: initialLocationName,
+    latitude: initialLatitude !== undefined ? initialLatitude : 14.5995,
+    longitude: initialLongitude !== undefined ? initialLongitude : 120.9842,
     surveyScope: '',
     systemTypes: [],
     buildingType: '',
@@ -209,12 +225,30 @@ export default function CreateSurveyForm({ onSave, onExit, initialCompanyName = 
                 🏢 COMPANY & PROJECT DETAILS
               </p>
               <div className="space-y-4">
-                {!initialCompanyName && (
+                <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label style={labelStyle}>Company Name</label>
-                    <input value={form.companyName} onChange={e => update('companyName', e.target.value)} style={inputStyle} placeholder="e.g. ABC Corporation Philippines" required />
+                    <input
+                      value={form.companyName}
+                      onChange={e => update('companyName', e.target.value)}
+                      style={{ ...inputStyle, background: initialCompanyName ? '#F1F5F9' : '#FFFFFF' }}
+                      placeholder="e.g. ABC Corporation Philippines"
+                      disabled={!!initialCompanyName}
+                      required
+                    />
                   </div>
-                )}
+                  <div>
+                    <label style={labelStyle}>Project Name</label>
+                    <input
+                      value={form.projectName}
+                      onChange={e => update('projectName', e.target.value)}
+                      style={inputStyle}
+                      placeholder="e.g. Headquarters CCTV Install"
+                      required
+                    />
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label style={labelStyle}>Location Name / Area</label>
@@ -251,29 +285,17 @@ export default function CreateSurveyForm({ onSave, onExit, initialCompanyName = 
                     />
                   </div>
                 </div>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-          {/* Step 1: Project & Systems */}
+          {/* Step 1: System Types */}
           {step === 1 && (
             <div style={sectionStyle}>
               <p className="text-[10px] font-bold uppercase tracking-wider mb-4 text-[#1D4ED8]">
-                🛡️ PROJECT NAME & SYSTEM TYPES
+                🛡️ SYSTEM TYPES & NOTES
               </p>
               
-              {/* Project Name field */}
-              <div className="mb-6">
-                <label style={labelStyle}>Project Name</label>
-                <input
-                  value={form.projectName}
-                  onChange={e => update('projectName', e.target.value)}
-                  style={inputStyle}
-                  placeholder="e.g. Headquarters CCTV Install"
-                  required
-                />
-              </div>
-
               <p className="text-xs text-slate-400 font-semibold mb-5">Select all systems that apply — the AI will generate the correct equipment list for each.</p>
               <div className="grid grid-cols-2 gap-3">
                 {SYSTEM_OPTIONS.map(opt => {
@@ -378,7 +400,41 @@ export default function CreateSurveyForm({ onSave, onExit, initialCompanyName = 
             {step < STEPS.length - 1 ? (
               <button
                 type="button"
-                onClick={() => setStep(step + 1)}
+                onClick={() => {
+                  if (step === 0) {
+                    if (!form.companyName.trim()) {
+                      alert('Please enter the Company Name.');
+                      return;
+                    }
+                    if (!form.projectName.trim()) {
+                      alert('Please enter the Project Name.');
+                      return;
+                    }
+                    if (!form.locationName.trim()) {
+                      alert('Please enter the Location Name.');
+                      return;
+                    }
+                    if (!form.startDate) {
+                      alert('Please select the Survey Schedule Date.');
+                      return;
+                    }
+                    if (!form.buildingType) {
+                      alert('Please select the Building Type.');
+                      return;
+                    }
+                    if (!form.floors || form.floors < 1) {
+                      alert('Please enter a valid number of floors.');
+                      return;
+                    }
+                  }
+                  if (step === 1) {
+                    if (form.systemTypes.length === 0) {
+                      alert('Please select at least one system type.');
+                      return;
+                    }
+                  }
+                  setStep(step + 1);
+                }}
                 className="px-8 py-3 rounded-xl text-xs font-bold text-white transition-all shadow-sm"
                 style={{ background: '#1E3A8A' }}
               >

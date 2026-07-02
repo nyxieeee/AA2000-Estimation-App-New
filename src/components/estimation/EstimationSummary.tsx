@@ -101,6 +101,7 @@ interface Props {
   project: Project;
   user: User | null;
   onBack: () => void;
+  onUpdateStatus?: (projectId: string, status: string) => void;
 }
 
 function getRoleDefaultDayRate(role: string): number {
@@ -153,7 +154,7 @@ const AI_STEPS = [
   'Compiling materials bill-of-quantities & unit counts...',
 ];
 
-export default function EstimationSummary({ project, user, onBack }: Props) {
+export default function EstimationSummary({ project, user, onBack, onUpdateStatus }: Props) {
   const showPrices = !!(user && (
     user.role === 'ADMIN' || 
     user.role === 'SALES' || 
@@ -211,7 +212,6 @@ export default function EstimationSummary({ project, user, onBack }: Props) {
     });
     return sheets;
   };
-
   const getFilteredProducts = (query: string) => {
     const q = query.trim().toLowerCase();
     if (q.length <= 1) return [];
@@ -226,6 +226,85 @@ export default function EstimationSummary({ project, user, onBack }: Props) {
         (p.brand && p.brand.toLowerCase().includes(q))
       );
     }).slice(0, 15);
+  };
+
+  const getSystemBrand = (systemType: string): string => {
+    const brands = new Set<string>();
+    
+    consumables.forEach(c => {
+      if (!c.productId) return;
+      const p = (productsData as any[]).find(prod => prod.id === c.productId);
+      if (!p) return;
+      
+      const sheetName = (p.sheetName || '').toUpperCase();
+      const brandField = (p.brand || '').toUpperCase();
+      
+      let isMatch = false;
+      if (systemType === 'CCTV' && (sheetName.includes('CCTV') || sheetName.includes('AVTECH'))) {
+        isMatch = true;
+      } else if (systemType === 'FDAS' && (sheetName.includes('FDAS') || sheetName.includes('FIRE') || sheetName.includes('ASENWARE'))) {
+        isMatch = true;
+      } else if (systemType === 'ACCESS_CONTROL' && (sheetName.includes('ZK') || sheetName.includes('ACCESS') || sheetName.includes('WINPAK') || sheetName.includes('HONEYWELL_VISTA'))) {
+        isMatch = true;
+      } else if (systemType === 'BURGLAR_ALARM' && (sheetName.includes('PARADOX') || sheetName.includes('ALARM'))) {
+        isMatch = true;
+      } else if (systemType === 'DOOR_LOCK' && (sheetName.includes('LOCK') || sheetName.includes('HOTEL'))) {
+        isMatch = true;
+      } else if (systemType === 'FIRE_PROTECTION' && (sheetName.includes('FIRE') || sheetName.includes('SPRINKLER') || sheetName.includes('EXTINGUISHER') || sheetName.includes('PUMP'))) {
+        isMatch = true;
+      } else if (systemType === 'INTERCOM_NURSE_CALL' && (sheetName.includes('INTERCOM') || sheetName.includes('AIPHONE') || sheetName.includes('FARFISA'))) {
+        isMatch = true;
+      } else if (systemType === 'PABX_PAGING' && (sheetName.includes('PABX') || sheetName.includes('PAGING') || sheetName.includes('TOA'))) {
+        isMatch = true;
+      } else if (systemType === 'PARKING_BARRIER' && (sheetName.includes('BARRIER') || sheetName.includes('PARKING') || sheetName.includes('VEHICLE'))) {
+        isMatch = true;
+      } else if (systemType === 'POS_SYSTEM' && sheetName.includes('POS')) {
+        isMatch = true;
+      } else if (systemType === 'ROOM_ALERT' && sheetName.includes('ALERT')) {
+        isMatch = true;
+      } else if (systemType === 'XRAY_SECURITY' && (sheetName.includes('XRAY') || sheetName.includes('TURNSTILE') || sheetName.includes('GARRETT') || sheetName.includes('UNIQSCAN'))) {
+        isMatch = true;
+      }
+      
+      if (isMatch) {
+        let detectedBrand = '';
+        if (brandField && brandField !== 'N/A' && brandField !== '-') {
+          detectedBrand = p.brand.trim();
+        } else {
+          if (sheetName.includes('HIKVISION')) detectedBrand = 'HIKVISION';
+          else if (sheetName.includes('DAHUA')) detectedBrand = 'DAHUA';
+          else if (sheetName.includes('EZVIZ')) detectedBrand = 'EZVIZ';
+          else if (sheetName.includes('ZKTECO') || sheetName.includes('ZK_') || sheetName.startsWith('ZK')) detectedBrand = 'ZKTECO';
+          else if (sheetName.includes('HONEYWELL')) detectedBrand = 'HONEYWELL';
+          else if (sheetName.includes('PARADOX')) detectedBrand = 'PARADOX';
+          else if (sheetName.includes('ASENWARE')) detectedBrand = 'ASENWARE';
+          else if (sheetName.includes('HOCHIKI')) detectedBrand = 'HOCHIKI';
+          else if (sheetName.includes('NOTIFIER')) detectedBrand = 'NOTIFIER';
+          else if (sheetName.includes('SIMPLEX')) detectedBrand = 'SIMPLEX';
+          else if (sheetName.includes('GST')) detectedBrand = 'GST';
+          else if (sheetName.includes('AIPHONE')) detectedBrand = 'AIPHONE';
+          else if (sheetName.includes('FARFISA')) detectedBrand = 'FARFISA';
+          else if (sheetName.includes('TOA')) detectedBrand = 'TOA';
+          else if (sheetName.includes('AVTECH')) detectedBrand = 'AVTECH';
+          else if (sheetName.includes('GARRETT')) detectedBrand = 'GARRETT';
+          else if (sheetName.includes('UNIQSCAN')) detectedBrand = 'UNIQSCAN';
+          else if (sheetName.includes('DAOSAFE')) detectedBrand = 'DAOSAFE';
+        }
+        if (detectedBrand) {
+          brands.add(detectedBrand);
+        }
+      }
+    });
+    
+    if (brands.size > 0) {
+      return Array.from(brands).join(', ');
+    }
+    
+    if (systemType === 'CCTV') return 'HIKVISION';
+    if (systemType === 'ACCESS_CONTROL' || systemType === 'DOOR_LOCK') return 'ZKTECO';
+    if (systemType === 'BURGLAR_ALARM') return 'PARADOX';
+    if (systemType === 'FDAS') return 'ASENWARE';
+    return '';
   };
 
   // Summary counts for the stat cards
@@ -304,8 +383,51 @@ export default function EstimationSummary({ project, user, onBack }: Props) {
   };
 
   const runEstimateFromSurveys = (surveysList: any[]) => {
-    const matchDbProduct = (searchName: string, defaultName: string, defaultCategory: string, defaultUnit: string, quantity: number) => {
-      const matched = (productsData as any[]).find(p => p.name.toLowerCase().includes(searchName.toLowerCase()));
+    const getCameraSearchTerm = (type: string, resolution: string) => {
+      let resTerm = '';
+      if (resolution === '2MP') resTerm = '2.0 MP';
+      else if (resolution === '5MP') resTerm = '4.0 MP'; // 4.0 MP is typical for 5MP targets in products.json
+      else if (resolution === '8MP') resTerm = '8.0 MP';
+      else if (resolution === '12MP') resTerm = '12 MP';
+      return `${resTerm} ${type}`;
+    };
+
+    const matchDbProduct = (searchName: string, defaultName: string, defaultCategory: string, defaultUnit: string, quantity: number, preferredBrand?: string) => {
+      let matched = null;
+      if (preferredBrand) {
+        // Try preferred brand search
+        matched = (productsData as any[]).find(p => 
+          p.name.toLowerCase().includes(searchName.toLowerCase()) && 
+          ((p.brand && p.brand.toLowerCase() === preferredBrand.toLowerCase()) || 
+           (p.sheetName && p.sheetName.toLowerCase().includes(preferredBrand.toLowerCase())))
+        );
+        // Alternate search: check "X.0 MP" vs "X MP"
+        if (!matched && searchName.includes('.0 MP')) {
+          const altSearch = searchName.replace('.0 MP', ' MP');
+          matched = (productsData as any[]).find(p => 
+            p.name.toLowerCase().includes(altSearch.toLowerCase()) && 
+            ((p.brand && p.brand.toLowerCase() === preferredBrand.toLowerCase()) || 
+             (p.sheetName && p.sheetName.toLowerCase().includes(preferredBrand.toLowerCase())))
+          );
+        }
+        if (!matched && searchName.includes(' MP') && !searchName.includes('.0 MP')) {
+          const altSearch = searchName.replace(' MP', '.0 MP');
+          matched = (productsData as any[]).find(p => 
+            p.name.toLowerCase().includes(altSearch.toLowerCase()) && 
+            ((p.brand && p.brand.toLowerCase() === preferredBrand.toLowerCase()) || 
+             (p.sheetName && p.sheetName.toLowerCase().includes(preferredBrand.toLowerCase())))
+          );
+        }
+      }
+      
+      if (!matched) {
+        matched = (productsData as any[]).find(p => p.name.toLowerCase().includes(searchName.toLowerCase()));
+        if (!matched && searchName.includes('.0 MP')) {
+          const altSearch = searchName.replace('.0 MP', ' MP');
+          matched = (productsData as any[]).find(p => p.name.toLowerCase().includes(altSearch.toLowerCase()));
+        }
+      }
+
       const unitPrice = matched ? (matched[priceTier] || 0) : 0;
       return {
         id: crypto.randomUUID(),
@@ -327,20 +449,84 @@ export default function EstimationSummary({ project, user, onBack }: Props) {
       if (s.type === 'CCTV') {
         const cameraCount = Number(s.data.cameraCount) || 8;
         const cableLength = Number(s.data.cableLength) || (cameraCount * 45);
+        const prefBrand = s.data.preferredBrand;
         totalItemsCount += cameraCount + 2;
 
-        items.push(matchDbProduct('Dome Camera', 'IP Dome Camera', 'Hardware', 'pcs', Math.ceil(cameraCount / 2)));
-        items.push(matchDbProduct('Bullet Camera', 'IP Bullet Camera', 'Hardware', 'pcs', Math.floor(cameraCount / 2)));
-        items.push(matchDbProduct('NVR', 'Network Video Recorder (NVR)', 'Hardware', 'pcs', 1));
-        items.push(matchDbProduct(s.data.cableType || 'UTP Cable', 'Cat6 UTP Cable', 'Wires & Cables', 'meters', cableLength));
-        items.push(matchDbProduct('Switch', 'PoE Switch', 'Hardware', 'pcs', Math.ceil(cameraCount / 8)));
-        items.push(matchDbProduct('RJ45', 'RJ45 Connectors', 'Mounting Hardware', 'pcs', cameraCount * 2));
+        // 1. Camera Types and Quantities based on CameraForm checkboxes
+        const selectedTypes = s.data.cameraTypes && s.data.cameraTypes.length > 0
+          ? s.data.cameraTypes
+          : ['Dome', 'Bullet']; // Default if none checked
         
+        const countPerType = Math.ceil(cameraCount / selectedTypes.length);
+        
+        selectedTypes.forEach((type: string) => {
+          const searchTerm = getCameraSearchTerm(type, s.data.resolution);
+          items.push(matchDbProduct(searchTerm, `${s.data.resolution || 'IP'} ${type} Camera`, 'Hardware', 'pcs', countPerType, prefBrand));
+        });
+
+        // 2. NVR matching preferred brand and channel count
+        let nvrSearch = 'NVR';
+        if (cameraCount <= 8) nvrSearch = '8 Channel NVR';
+        else if (cameraCount <= 16) nvrSearch = '16 Channel NVR';
+        else nvrSearch = '32 Channel NVR';
+        
+        let nvrItem = matchDbProduct(nvrSearch, `NVR ${cameraCount} Channels`, 'Hardware', 'pcs', 1, prefBrand);
+        if (!nvrItem.productId) {
+          nvrItem = matchDbProduct('NVR', 'Network Video Recorder (NVR)', 'Hardware', 'pcs', 1, prefBrand);
+        }
+        items.push(nvrItem);
+
+        // 3. PoE Network Switch sized to camera count
+        let switchSearch = 'PoE Switch';
+        if (cameraCount <= 8) switchSearch = '8-port PoE';
+        else if (cameraCount <= 16) switchSearch = '16-port PoE';
+        else switchSearch = '24-port PoE';
+        
+        let switchItem = matchDbProduct(switchSearch, `PoE Switch`, 'Hardware', 'pcs', 1, prefBrand);
+        if (!switchItem.productId) {
+          switchItem = matchDbProduct('Switch', 'PoE Switch', 'Hardware', 'pcs', Math.ceil(cameraCount / 8), prefBrand);
+        }
+        items.push(switchItem);
+
+        // 4. Infrastructure - Cable Type (e.g. Cat6, Fiber, Coax)
+        const cableSearch = s.data.cableType || 'UTP Cable';
+        const prefCableBrand = s.data.preferredCableBrand;
+        items.push(matchDbProduct(cableSearch, `${cableSearch} Cable`, 'Wires & Cables', 'meters', cableLength, prefCableBrand));
+
+        // 5. Infrastructure - Cable Path (Conduit/Cable Tray) accessories
+        if (s.data.cablePath === 'Conduit') {
+          items.push(matchDbProduct('PVC Conduit', 'PVC Conduit Pipe 20mm', 'Mounting Hardware', 'pcs', Math.ceil(cableLength / 3)));
+        } else if (s.data.cablePath === 'Cable Tray') {
+          items.push(matchDbProduct('Cable Tray', 'Metal Cable Tray', 'Mounting Hardware', 'pcs', Math.ceil(cableLength / 3)));
+        }
+
+        // 6. Accessories - Data Cabinet sized to layout
+        let cabinetSearch = '6U';
+        if (cameraCount <= 8) cabinetSearch = '4U';
+        else if (cameraCount <= 16) cabinetSearch = '9U';
+        else cabinetSearch = '12U';
+        items.push(matchDbProduct(cabinetSearch, `${cabinetSearch} Data Cabinet`, 'Hardware', 'pcs', 1));
+
+        // 7. Accessories - UPS backup power
+        let upsSearch = '1KVA';
+        if (cameraCount > 16) upsSearch = '2KVA';
+        items.push(matchDbProduct(upsSearch, `Online UPS ${upsSearch}`, 'Hardware', 'pcs', 1));
+
+        // 8. Accessories - Micro SD Cards for Edge Storage
+        items.push(matchDbProduct('SD CARD', '64GB MicroSD Card', 'Mounting Hardware', 'pcs', cameraCount));
+
+        // 9. Accessories - RJ45 connectors
+        items.push(matchDbProduct('RJ45', 'RJ45 Connectors', 'Mounting Hardware', 'pcs', cameraCount * 2));
+
         if (s.data.buildingType) {
           constraintsList.push(`Building: ${s.data.buildingType} (${s.data.floors || 1} floors).`);
         }
         if (s.data.coreDrilling) {
           constraintsList.push('Core drilling required for cable paths.');
+          items.push(matchDbProduct('Drill Bit', 'Masonry Core Drill Bit', 'Mounting Hardware', 'pcs', 1));
+        }
+        if (s.data.cablePath) {
+          constraintsList.push(`Routing path: ${s.data.cablePath} on ${s.data.wallType || 'concrete'} walls.`);
         }
       } else if (s.type === 'FIRE_ALARM') {
         const smoke = Number(s.data.smokeDetectors) || 0;
@@ -420,6 +606,21 @@ export default function EstimationSummary({ project, user, onBack }: Props) {
 
   // Load initial estimate or pre-fill from completed surveys if available
   useEffect(() => {
+    const saved = localStorage.getItem(`aa2000_estimation_${project.id}`);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed.manpower) setManpower(parsed.manpower);
+        if (parsed.consumables) setConsumables(parsed.consumables);
+        if (parsed.fees) setFees(parsed.fees);
+        if (parsed.constraints) setConstraints(parsed.constraints);
+        if (parsed.priceTier) setPriceTier(parsed.priceTier);
+        return;
+      } catch (e) {
+        console.error('Failed to parse saved estimation', e);
+      }
+    }
+
     if (manpower.length === 0 && consumables.length === 0) {
       const projectSurveys = JSON.parse(localStorage.getItem('aa2000_surveys') || '[]')
         .filter((s: any) => s.projectId === project.id);
@@ -595,6 +796,349 @@ export default function EstimationSummary({ project, user, onBack }: Props) {
     }
   };
 
+  const handleExportPdf = async () => {
+    const exportBtn = document.activeElement as HTMLButtonElement;
+    const originalText = exportBtn ? exportBtn.innerHTML : 'Export PDF';
+    if (exportBtn) {
+      exportBtn.disabled = true;
+      exportBtn.innerText = 'Generating PDF...';
+    }
+
+    try {
+      if (!(window as any).html2pdf) {
+        await new Promise<void>((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+          script.onload = () => resolve();
+          script.onerror = (e) => reject(new Error('Failed to load PDF library'));
+          document.head.appendChild(script);
+        });
+      }
+
+      const totalLabor = manpower.reduce((sum, m) => sum + (m.totalCost ?? 0), 0);
+      const totalMaterials = consumables.reduce((sum, c) => sum + (c.totalPrice || 0), 0);
+      const totalFees = fees.reduce((sum, f) => sum + (f.amount || 0), 0);
+      const subtotal = totalLabor + totalMaterials + totalFees;
+      const vat = subtotal * 0.12;
+      const grandTotalWithVAT = subtotal * 1.12;
+
+      const hardwareTotal = consumables
+        .filter(c => c.category !== 'Wires & Cables')
+        .reduce((sum, c) => sum + (c.totalPrice || 0), 0);
+
+      const cablingTotal = consumables
+        .filter(c => c.category === 'Wires & Cables')
+        .reduce((sum, c) => sum + (c.totalPrice || 0), 0);
+
+      const systemLabelsWithBrands = (project.systemTypes || []).map(type => {
+        const brand = getSystemBrand(type);
+        return brand ? `${type} (${brand})` : type;
+      });
+      const systemLabel = systemLabelsWithBrands.join(' & ') || 'Security & Technology';
+
+      const formattedDate = new Date().toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      });
+
+      const constraintTexts = [
+        constraints.physical ? `Physical: ${constraints.physical}` : '',
+        constraints.electrical ? `Electrical: ${constraints.electrical}` : '',
+        constraints.installation ? `Cabling/Shift: ${constraints.installation}` : ''
+      ].filter(Boolean).join(' | ');
+
+      const technicianName = project.technicianName || (user?.fullName || 'Demo Technician');
+
+      // Create a 1px hidden outer wrapper to bypass browser paint optimization
+      const outer = document.createElement('div');
+      outer.style.position = 'fixed';
+      outer.style.top = '0';
+      outer.style.left = '0';
+      outer.style.width = '816px';
+      outer.style.height = '1px';
+      outer.style.overflow = 'hidden';
+      outer.style.zIndex = '99999';
+      outer.style.pointerEvents = 'none';
+
+      const container = document.createElement('div');
+      container.style.width = '816px';
+      container.style.padding = '0';
+      container.style.boxSizing = 'border-box';
+      container.style.background = '#FFFFFF';
+      container.style.fontFamily = "'Inter', system-ui, -apple-system, sans-serif";
+      container.style.color = '#1E293B';
+
+      const headerHtml = `
+        <!-- HEADER BANNER -->
+        <div style="background: #1E3A8A; color: #FFFFFF; padding: 18px 24px; display: flex; align-items: center; justify-content: space-between; border-radius: 2px;">
+          <div style="display: flex; align-items: center;">
+            <!-- Camera Lens Logo -->
+            <div style="width: 32px; height: 32px; border-radius: 50%; border: 3px solid #FFFFFF; display: flex; align-items: center; justify-content: center; background: radial-gradient(circle, #FFFFFF 30%, transparent 70%); margin-right: 12px; flex-shrink: 0;">
+              <div style="width: 12px; height: 12px; border-radius: 50%; background: #FFFFFF;"></div>
+            </div>
+            <div>
+              <div style="font-size: 26px; font-weight: 900; line-height: 1; letter-spacing: 0.05em; font-family: 'Inter', sans-serif;">AA2000</div>
+              <div style="font-size: 10px; font-weight: 600; opacity: 0.9; margin-top: 1px; font-family: 'Inter', sans-serif; letter-spacing: 0.02em;">Security and Technology Solutions Inc.</div>
+            </div>
+          </div>
+          <div style="text-align: right; font-size: 8px; line-height: 1.45; max-width: 380px; opacity: 0.95; font-family: 'Inter', sans-serif;">
+            <div>Unit 2-C Norkis Building, 11 Calbayog Cor., Domingo M. Guevara St., Mandaluyong City, Philippines 1550</div>
+            <div>T: (02) 8571-5693 &nbsp;|&nbsp; M: 0917-884-8844 &nbsp;|&nbsp; E: aa2000ent@gmail.com &nbsp;|&nbsp; Web: www.aa2000ph.com</div>
+          </div>
+        </div>
+      `;
+
+      const footerHtml = `
+        <!-- FOOTER -->
+        <div style="position: absolute; bottom: 35px; left: 40px; right: 40px; border-top: 1px dashed #CBD5E1; padding-top: 15px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; color: #64748B; font-size: 8px; font-family: 'Inter', sans-serif;">
+            <div>Unit 2-C Norkis Building, 11 Calbayog Cor., Domingo M. Guevara St., Mandaluyong City, Philippines 1550 &nbsp;|&nbsp; T: (02) 8571-5693</div>
+            <div style="font-weight: 700; color: #475569;">Disclaimer: This report is generated for client presentation and reflects finalized project details.</div>
+          </div>
+        </div>
+      `;
+
+      container.innerHTML = `
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+        
+        <!-- PAGE 1: SUMMARY & COST SUMMARY -->
+        <div style="box-sizing: border-box; width: 100%; height: 1045px; padding: 40px; position: relative; page-break-after: always; background: #FFFFFF; border: 1px solid #CBD5E1;">
+          ${headerHtml}
+          
+          <!-- REPORT TITLE -->
+          <div style="margin-top: 25px; display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #E2E8F0; padding-bottom: 8px;">
+            <div>
+              <h1 style="color: #1E3A8A; font-size: 18px; font-weight: 900; margin: 0; text-transform: uppercase; letter-spacing: -0.01em;">FINALIZED PROJECT REPORT</h1>
+              <p style="font-size: 11px; color: #475569; font-weight: 700; margin: 4px 0 0 0;">Project Name: ${project.name}</p>
+            </div>
+            <div style="font-size: 11px; color: #64748B; font-weight: 700;">${formattedDate}</div>
+          </div>
+
+          <!-- PROJECT SUMMARY -->
+          <h2 style="font-size: 11px; font-weight: 900; color: #1E3A8A; text-transform: uppercase; margin: 20px 0 6px 0; letter-spacing: 0.05em;">Project Summary</h2>
+          <table style="width: 100%; border-collapse: collapse; font-size: 10px; font-family: 'Inter', sans-serif;">
+            <tr>
+              <td style="width: 16%; padding: 8px 10px; border: 1px solid #E2E8F0; background: #F8FAFC; font-weight: 700; color: #475569;">Client</td>
+              <td style="width: 34%; padding: 8px 10px; border: 1px solid #E2E8F0; color: #1E293B; font-weight: 600;">${project.clientName}</td>
+              <td style="width: 16%; padding: 8px 10px; border: 1px solid #E2E8F0; background: #F8FAFC; font-weight: 700; color: #475569;">Location</td>
+              <td style="width: 34%; padding: 8px 10px; border: 1px solid #E2E8F0; color: #1E293B; font-weight: 600;">${project.location}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 10px; border: 1px solid #E2E8F0; background: #F8FAFC; font-weight: 700; color: #475569;">Technician</td>
+              <td style="padding: 8px 10px; border: 1px solid #E2E8F0; color: #1E293B; font-weight: 600;">${technicianName}</td>
+              <td style="padding: 8px 10px; border: 1px solid #E2E8F0; background: #F8FAFC; font-weight: 700; color: #475569;">Status</td>
+              <td style="padding: 8px 10px; border: 1px solid #E2E8F0; color: #059669; font-weight: 700; text-transform: uppercase; font-size: 9px; letter-spacing: 0.02em;">${project.status === 'Completed' ? 'Finalized - Approved' : project.status}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 10px; border: 1px solid #E2E8F0; background: #F8FAFC; font-weight: 700; color: #475569;">Finalized At</td>
+              <td style="padding: 8px 10px; border: 1px solid #E2E8F0; color: #1E293B; font-weight: 600;">${formattedDate}</td>
+              <td style="padding: 8px 10px; border: 1px solid #E2E8F0; background: #F8FAFC; font-weight: 700; color: #475569;">Total Cost</td>
+              <td style="padding: 8px 10px; border: 1px solid #E2E8F0; color: #1E3A8A; font-weight: 900; font-size: 11px;">PHP ${grandTotalWithVAT.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+            </tr>
+          </table>
+
+          <!-- COST BREAKDOWN -->
+          <h2 style="font-size: 11px; font-weight: 900; color: #1E3A8A; text-transform: uppercase; margin: 25px 0 6px 0; letter-spacing: 0.05em;">Cost Breakdown Summary</h2>
+          <table style="width: 100%; border-collapse: collapse; font-size: 10px; font-family: 'Inter', sans-serif;">
+            <thead>
+              <tr style="background: #F8FAFC; text-align: left;">
+                <th style="padding: 8px 10px; border: 1px solid #E2E8F0; color: #475569; font-weight: 700; width: 22%;">Category</th>
+                <th style="padding: 8px 10px; border: 1px solid #E2E8F0; color: #475569; font-weight: 700; width: 44%;">Item/Role</th>
+                <th style="padding: 8px 10px; border: 1px solid #E2E8F0; color: #475569; font-weight: 700; width: 12%; text-align: center;">Qty/Hours</th>
+                <th style="padding: 8px 10px; border: 1px solid #E2E8F0; color: #475569; font-weight: 700; width: 11%; text-align: right;">Unit Cost</th>
+                <th style="padding: 8px 10px; border: 1px solid #E2E8F0; color: #475569; font-weight: 700; width: 11%; text-align: right;">Subtotal</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Hardware Subtotal -->
+              <tr>
+                <td style="padding: 8px 10px; border: 1px solid #E2E8F0; font-weight: 700; color: #64748B;">Cost Summary</td>
+                <td style="padding: 8px 10px; border: 1px solid #E2E8F0; color: #1E293B; font-weight: 600;">${systemLabel}: Hardware</td>
+                <td style="padding: 8px 10px; border: 1px solid #E2E8F0; text-align: center; color: #64748B;">-</td>
+                <td style="padding: 8px 10px; border: 1px solid #E2E8F0; text-align: right; color: #64748B;">-</td>
+                <td style="padding: 8px 10px; border: 1px solid #E2E8F0; text-align: right; color: #1E293B; font-weight: 600;">PHP ${hardwareTotal.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
+              </tr>
+              <!-- Cabling Subtotal -->
+              <tr>
+                <td style="padding: 8px 10px; border: 1px solid #E2E8F0; font-weight: 700; color: #64748B;">Cost Summary</td>
+                <td style="padding: 8px 10px; border: 1px solid #E2E8F0; color: #1E293B; font-weight: 600;">${systemLabel}: Cabling</td>
+                <td style="padding: 8px 10px; border: 1px solid #E2E8F0; text-align: center; color: #64748B;">-</td>
+                <td style="padding: 8px 10px; border: 1px solid #E2E8F0; text-align: right; color: #64748B;">-</td>
+                <td style="padding: 8px 10px; border: 1px solid #E2E8F0; text-align: right; color: #1E293B; font-weight: 600;">PHP ${cablingTotal.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
+              </tr>
+              <!-- Labor Subtotal -->
+              <tr>
+                <td style="padding: 8px 10px; border: 1px solid #E2E8F0; font-weight: 700; color: #64748B;">Cost Summary</td>
+                <td style="padding: 8px 10px; border: 1px solid #E2E8F0; color: #1E293B; font-weight: 600;">${systemLabel}: Labor</td>
+                <td style="padding: 8px 10px; border: 1px solid #E2E8F0; text-align: center; color: #1E293B; font-weight: 600;">${totalManDays}d x ${totalHeadcount} tech</td>
+                <td style="padding: 8px 10px; border: 1px solid #E2E8F0; text-align: right; color: #1E293B; font-weight: 600;">PHP ${(totalManDays > 0 ? totalLabor / totalManDays : 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                <td style="padding: 8px 10px; border: 1px solid #E2E8F0; text-align: right; color: #1E293B; font-weight: 600;">PHP ${totalLabor.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
+              </tr>
+              <!-- Logistics / Fees -->
+              ${totalFees > 0 ? `
+              <tr>
+                <td style="padding: 8px 10px; border: 1px solid #E2E8F0; font-weight: 700; color: #64748B;">Cost Summary</td>
+                <td style="padding: 8px 10px; border: 1px solid #E2E8F0; color: #1E293B; font-weight: 600;">Logistics & Special Fees</td>
+                <td style="padding: 8px 10px; border: 1px solid #E2E8F0; text-align: center; color: #64748B;">-</td>
+                <td style="padding: 8px 10px; border: 1px solid #E2E8F0; text-align: right; color: #64748B;">-</td>
+                <td style="padding: 8px 10px; border: 1px solid #E2E8F0; text-align: right; color: #1E293B; font-weight: 600;">PHP ${totalFees.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
+              </tr>` : ''}
+              <!-- Estimated Row -->
+              <tr>
+                <td style="padding: 8px 10px; border: 1px solid #E2E8F0; font-weight: 700; color: #64748B;">Estimated</td>
+                <td style="padding: 8px 10px; border: 1px solid #E2E8F0; color: #1E293B; font-weight: 600;">Estimated (${systemLabel}) with VAT</td>
+                <td style="padding: 8px 10px; border: 1px solid #E2E8F0; text-align: center; color: #64748B;">-</td>
+                <td style="padding: 8px 10px; border: 1px solid #E2E8F0; text-align: right; color: #64748B;">-</td>
+                <td style="padding: 8px 10px; border: 1px solid #E2E8F0; text-align: right; color: #1E293B; font-weight: 700;">PHP ${grandTotalWithVAT.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
+              </tr>
+              <!-- Grand Total row -->
+              <tr style="background: #EFF6FF;">
+                <td colspan="4" style="padding: 10px 10px; border: 1px solid #E2E8F0; font-weight: 900; color: #1E3A8A; text-transform: uppercase; text-align: right;">Total Cost (Project, VAT Inc.)</td>
+                <td style="padding: 10px 10px; border: 1px solid #E2E8F0; text-align: right; color: #1E3A8A; font-weight: 900; font-size: 11px;">PHP ${grandTotalWithVAT.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+              </tr>
+            </tbody>
+          </table>
+          
+          ${footerHtml}
+        </div>
+
+        <!-- PAGE 2: TECHNICAL DETAILS, ROLES & CONSUMABLES -->
+        <div style="box-sizing: border-box; width: 100%; height: 1045px; padding: 40px; position: relative; background: #FFFFFF; border: 1px solid #CBD5E1;">
+          ${headerHtml}
+          
+          <!-- TECHNICAL BREAKDOWN -->
+          <h2 style="font-size: 11px; font-weight: 900; color: #1E3A8A; text-transform: uppercase; margin: 25px 0 6px 0; letter-spacing: 0.05em;">Technical Breakdown</h2>
+          <div style="font-size: 10px; font-weight: 700; color: #475569; margin-bottom: 8px;">System: ${systemLabel}</div>
+          
+          <table style="width: 100%; border-collapse: collapse; font-size: 9px; font-family: 'Inter', sans-serif; margin-bottom: 15px;">
+            <thead>
+              <tr style="background: #F8FAFC; text-align: left;">
+                <th style="padding: 6px 8px; border: 1px solid #E2E8F0; color: #475569; font-weight: 700; width: 20%;">Duration</th>
+                <th style="padding: 6px 8px; border: 1px solid #E2E8F0; color: #475569; font-weight: 700; width: 20%;">Technicians</th>
+                <th style="padding: 6px 8px; border: 1px solid #E2E8F0; color: #475569; font-weight: 700; width: 60%;">Site Constraints</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="padding: 6px 8px; border: 1px solid #E2E8F0; color: #1E293B; font-weight: 600;">${totalManDays} day(s)</td>
+                <td style="padding: 6px 8px; border: 1px solid #E2E8F0; color: #1E293B; font-weight: 600;">${totalHeadcount} tech(s)</td>
+                <td style="padding: 6px 8px; border: 1px solid #E2E8F0; color: #1E293B; font-weight: 600;">${constraintTexts || 'None recorded'}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- Manpower & Consumables Details Side-by-side -->
+          <div style="display: flex; gap: 15px; margin-top: 15px;">
+            <!-- Manpower Role Details -->
+            <div style="flex: 1;">
+              <div style="font-size: 9px; font-weight: 900; color: #1E3A8A; text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.02em;">Manpower Role Breakdown</div>
+              <table style="width: 100%; border-collapse: collapse; font-size: 8.5px; font-family: 'Inter', sans-serif;">
+                <thead>
+                  <tr style="background: #F8FAFC; text-align: left;">
+                    <th style="padding: 5px 6px; border: 1px solid #E2E8F0; color: #475569; font-weight: 700; width: 60%;">Manpower Role</th>
+                    <th style="padding: 5px 6px; border: 1px solid #E2E8F0; color: #475569; font-weight: 700; width: 20%; text-align: center;">Count</th>
+                    <th style="padding: 5px 6px; border: 1px solid #E2E8F0; color: #475569; font-weight: 700; width: 20%; text-align: center;">Hours</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${manpower.length > 0 ? manpower.map(m => `
+                    <tr>
+                      <td style="padding: 5px 6px; border: 1px solid #E2E8F0; color: #1E293B; font-weight: 600;">${m.role}</td>
+                      <td style="padding: 5px 6px; border: 1px solid #E2E8F0; text-align: center; color: #1E293B; font-weight: 600;">${m.headcount}</td>
+                      <td style="padding: 5px 6px; border: 1px solid #E2E8F0; text-align: center; color: #1E293B; font-weight: 600;">${m.hours}</td>
+                    </tr>
+                  `).join('') : `
+                    <tr>
+                      <td colspan="3" style="padding: 8px; border: 1px solid #E2E8F0; text-align: center; color: #94A3B8; font-weight: 600;">No manpower breakdown recorded</td>
+                    </tr>
+                  `}
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Consumables Details -->
+            <div style="flex: 1.2;">
+              <div style="font-size: 9px; font-weight: 900; color: #1E3A8A; text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.02em;">Consumables & Wires</div>
+              <table style="width: 100%; border-collapse: collapse; font-size: 8.5px; font-family: 'Inter', sans-serif;">
+                <thead>
+                  <tr style="background: #F8FAFC; text-align: left;">
+                    <th style="padding: 5px 6px; border: 1px solid #E2E8F0; color: #475569; font-weight: 700; width: 60%;">Consumable</th>
+                    <th style="padding: 5px 6px; border: 1px solid #E2E8F0; color: #475569; font-weight: 700; width: 15%; text-align: center;">Qty</th>
+                    <th style="padding: 5px 6px; border: 1px solid #E2E8F0; color: #475569; font-weight: 700; width: 25%; text-align: right;">Line Cost</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${consumables.length > 0 ? consumables.map(c => `
+                    <tr>
+                      <td style="padding: 5px 6px; border: 1px solid #E2E8F0; color: #1E293B; font-weight: 600; line-clamp: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px;" title="${c.name}">${c.name}</td>
+                      <td style="padding: 5px 6px; border: 1px solid #E2E8F0; text-align: center; color: #1E293B; font-weight: 600;">${c.quantity} ${c.unit || 'pcs'}</td>
+                      <td style="padding: 5px 6px; border: 1px solid #E2E8F0; text-align: right; color: #1E293B; font-weight: 600;">PHP ${(c.totalPrice || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
+                    </tr>
+                  `).join('') : `
+                    <tr>
+                      <td colspan="3" style="padding: 8px; border: 1px solid #E2E8F0; text-align: center; color: #94A3B8; font-weight: 600;">No consumables recorded</td>
+                    </tr>
+                  `}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- REMARKS -->
+          <h2 style="font-size: 11px; font-weight: 900; color: #1E3A8A; text-transform: uppercase; margin: 25px 0 6px 0; letter-spacing: 0.05em;">Remarks</h2>
+          <table style="width: 100%; border-collapse: collapse; font-size: 9.5px; font-family: 'Inter', sans-serif;">
+            <thead>
+              <tr style="background: #F8FAFC; text-align: left;">
+                <th style="padding: 6px 8px; border: 1px solid #E2E8F0; color: #475569; font-weight: 700; width: 20%;">Source</th>
+                <th style="padding: 6px 8px; border: 1px solid #E2E8F0; color: #475569; font-weight: 700; width: 80%;">Remarks</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="padding: 6px 8px; border: 1px solid #E2E8F0; color: #1E293B; font-weight: 700;">Technician</td>
+                <td style="padding: 6px 8px; border: 1px solid #E2E8F0; color: #475569; font-weight: 600;">${project.surveyScope || 'No technician remarks recorded.'}</td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 8px; border: 1px solid #E2E8F0; color: #1E293B; font-weight: 700;">Department</td>
+                <td style="padding: 6px 8px; border: 1px solid #E2E8F0; color: #475569; font-weight: 600;">No department remarks recorded.</td>
+              </tr>
+            </tbody>
+          </table>
+          
+          ${footerHtml}
+        </div>
+      `;
+
+      outer.appendChild(container);
+      document.body.appendChild(outer);
+
+      // Wait 250ms for browser layout & font loading
+      await new Promise(resolve => setTimeout(resolve, 250));
+
+      const opt = {
+        margin:       0,
+        filename:     `AA2000_Report_${project.name.replace(/\s+/g, '_')}.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true, logging: false },
+        jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+      };
+
+      await (window as any).html2pdf().set(opt).from(container).save();
+      document.body.removeChild(outer);
+    } catch (error) {
+      console.error('PDF Export Error:', error);
+      alert('An error occurred while generating the PDF. Please try again.');
+    } finally {
+      if (exportBtn) {
+        exportBtn.disabled = false;
+        exportBtn.innerHTML = originalText;
+      }
+    }
+  };
+
   const hasFiles = floorPlanFiles.length > 0;
   const sectionCard: React.CSSProperties = {
     background: '#FFFFFF',
@@ -650,12 +1194,17 @@ export default function EstimationSummary({ project, user, onBack }: Props) {
               {hasFiles ? `ANALYZE ${floorPlanFiles.length} FLOOR PLAN${floorPlanFiles.length > 1 ? 'S' : ''}` : 'AI ESTIMATE SCAN'}
             </button>
 
-            <button className="px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-500 border border-slate-200 hover:text-[#1E3A8A] transition-colors flex items-center gap-1.5">
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-              </svg>
-              Export PDF
-            </button>
+            {user?.role !== 'TECHNICIAN' && (
+              <button
+                onClick={handleExportPdf}
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-500 border border-slate-200 hover:text-[#1E3A8A] transition-colors flex items-center gap-1.5"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                </svg>
+                Export PDF
+              </button>
+            )}
           </div>
         </div>
       </header>
@@ -688,6 +1237,8 @@ export default function EstimationSummary({ project, user, onBack }: Props) {
                   XRAY_SECURITY:       { bg: '#FAF5FF', color: '#6B21A8', label: 'X-Ray & Turnstile System',           icon: '🔬' },
                 };
                 const cfg = COLORS[type] || { bg: '#F8FAFC', color: '#475569', label: type, icon: '⚙️' };
+                const brand = getSystemBrand(type);
+                const displayLabel = brand ? `${cfg.label} (${brand})` : cfg.label;
                 return (
                   <span
                     key={type}
@@ -695,7 +1246,7 @@ export default function EstimationSummary({ project, user, onBack }: Props) {
                     style={{ background: cfg.bg, color: cfg.color, borderColor: cfg.color + '30' }}
                   >
                     <span>{cfg.icon}</span>
-                    {cfg.label}
+                    {displayLabel}
                   </span>
                 );
               })}
@@ -1258,7 +1809,21 @@ export default function EstimationSummary({ project, user, onBack }: Props) {
             Back to Project
           </button>
           <button
-            onClick={() => { alert('Estimation details successfully saved into localized system record.'); onBack(); }}
+            onClick={() => {
+              const estimationData = {
+                manpower,
+                consumables,
+                fees,
+                constraints,
+                priceTier
+              };
+              localStorage.setItem(`aa2000_estimation_${project.id}`, JSON.stringify(estimationData));
+              if (user && user.role === 'TECHNICIAN' && onUpdateStatus) {
+                onUpdateStatus(project.id, 'Completed');
+              }
+              alert('Estimation details successfully saved into localized system record.');
+              onBack();
+            }}
             className="px-8 py-3 rounded-xl text-xs font-bold text-white transition-all shadow-sm hover:opacity-95"
             style={{ background: '#1E3A8A' }}
           >

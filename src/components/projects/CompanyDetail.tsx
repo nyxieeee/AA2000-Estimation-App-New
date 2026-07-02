@@ -158,15 +158,32 @@ export default function CompanyDetail({
           </p>
 
           <div className="flex flex-wrap items-center gap-6 pt-4 text-xs font-semibold text-blue-100">
-            <div className="flex items-center gap-1.5">
-              <span>📍</span> {companyProject.location || 'No Location'}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span>📍</span> 
+              <span>{companyProject.location || 'No Location'}</span>
+              {(companyProject.location || (companyProject.latitude && companyProject.longitude)) && (
+                <a
+                  href={
+                    companyProject.latitude && companyProject.longitude
+                      ? `https://www.google.com/maps/search/?api=1&query=${companyProject.latitude},${companyProject.longitude}`
+                      : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(companyProject.location || '')}`
+                  }
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ml-1.5 px-2.5 py-0.5 text-[9px] font-black uppercase bg-white/20 text-white hover:bg-white/30 rounded-full transition-all border border-white/10 shrink-0 inline-block align-middle"
+                >
+                  View Map
+                </a>
+              )}
             </div>
             <div className="flex items-center gap-1.5">
               <span>📞</span> {companyProject.clientPhone || 'No Contact'}
             </div>
-            <div className="flex items-center gap-1.5">
-              <span>✉️</span> {companyProject.clientEmail || 'No Email'}
-            </div>
+            {user.role === 'ADMIN' && (
+              <div className="flex items-center gap-1.5">
+                <span>✉️</span> {companyProject.clientEmail || 'No Email'}
+              </div>
+            )}
           </div>
         </div>
 

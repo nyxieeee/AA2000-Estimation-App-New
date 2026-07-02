@@ -240,9 +240,57 @@ export default function ProjectDetail({ user, project, onBack, onStartSurvey, on
                   </div>
                   <div>
                     <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Location</p>
-                    <p className="text-xs font-semibold text-slate-600">{project.location}</p>
+                    <p className="text-xs font-semibold text-slate-600 flex items-center gap-2 flex-wrap">
+                      <span>{project.location}</span>
+                      {(project.location || (project.latitude && project.longitude)) && (
+                        <a
+                          href={
+                            project.latitude && project.longitude
+                              ? `https://www.google.com/maps/search/?api=1&query=${project.latitude},${project.longitude}`
+                              : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(project.location || '')}`
+                          }
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-2 py-0.5 text-[9px] font-bold uppercase bg-blue-50 text-blue-600 hover:bg-blue-100 rounded transition-all border border-blue-100 shrink-0 inline-flex items-center gap-0.5"
+                        >
+                          View Map
+                        </a>
+                      )}
+                    </p>
                   </div>
                 </div>
+
+                {/* Client Contact Phone */}
+                <div className="flex items-center gap-2.5">
+                  <div
+                    className="w-8 h-8 rounded-lg flex items-center justify-center bg-slate-50 border border-slate-100 text-[#1E3A8A]"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-2.824-1.47-5.112-3.758-6.58-6.58l1.293-.97c.362-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H3.562A2.25 2.25 0 001.312 4.5v2.25z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Client Contact</p>
+                    <p className="text-xs font-semibold text-slate-600">{project.clientPhone || 'Not set'}</p>
+                  </div>
+                </div>
+
+                {/* Client Email (Admin Only) */}
+                {user.role === 'ADMIN' && (
+                  <div className="flex items-center gap-2.5">
+                    <div
+                      className="w-8 h-8 rounded-lg flex items-center justify-center bg-slate-50 border border-slate-100 text-[#1E3A8A]"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Client Email</p>
+                      <p className="text-xs font-semibold text-slate-600">{project.clientEmail || 'Not set'}</p>
+                    </div>
+                  </div>
+                )}
 
                 {/* Building type */}
                 {project.buildingType && (
@@ -278,9 +326,9 @@ export default function ProjectDetail({ user, project, onBack, onStartSurvey, on
               </div>
             </div>
 
-            {/* View Estimation & Survey Summary CTAs directly on Card - Only for non-technician roles */}
+            {/* View Estimation & Survey Summary CTAs directly on Card */}
             <div className="flex flex-col sm:flex-row gap-3">
-              {user.role !== 'TECHNICIAN' && (
+              {user.role !== 'TECHNICIAN' ? (
                 <>
                   <button
                     onClick={onViewSurveySummary}
@@ -302,6 +350,19 @@ export default function ProjectDetail({ user, project, onBack, onStartSurvey, on
                     VIEW COST ESTIMATION
                   </button>
                 </>
+              ) : (
+                isSurveyFilled && (
+                  <button
+                    onClick={onViewEstimation}
+                    className="flex items-center gap-2 px-6 py-3.5 rounded-2xl font-bold text-xs text-white shadow-sm hover:opacity-95 transition-all shrink-0 justify-center"
+                    style={{ background: '#1E3A8A' }}
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
+                    FILL COST ESTIMATION
+                  </button>
+                )
               )}
             </div>
           </div>
