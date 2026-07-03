@@ -248,6 +248,39 @@ export default function CreateSurveyForm({
                   </div>
                 </div>
 
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label style={labelStyle}>Client Contact Name</label>
+                    <input
+                      value={form.clientName}
+                      onChange={e => update('clientName', e.target.value)}
+                      style={inputStyle}
+                      placeholder="e.g. Juan Dela Cruz"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Client Contact Number</label>
+                    <input
+                      value={form.clientContactNumber}
+                      onChange={e => update('clientContactNumber', e.target.value)}
+                      style={inputStyle}
+                      placeholder="e.g. 09171234567"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Client Email Address</label>
+                    <input
+                      value={form.clientEmail}
+                      onChange={e => update('clientEmail', e.target.value)}
+                      style={inputStyle}
+                      placeholder="e.g. client@email.com"
+                      required
+                    />
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label style={labelStyle}>Location Name / Area</label>

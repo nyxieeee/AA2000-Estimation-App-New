@@ -100,11 +100,11 @@ export default function CreateProjectModal({ onClose, onCreate, isCompanyMode = 
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label style={labelStyle}>{isCompanyMode ? 'Company Name' : 'Project Name'}</label>
-              <input value={name} onChange={e => setName(e.target.value)} style={inputStyle} placeholder={isCompanyMode ? "e.g. BGC CCTV Site Survey" : "e.g. BGC CCTV Site Survey"} required />
+              <input value={name} onChange={e => setName(e.target.value)} style={inputStyle} placeholder={isCompanyMode ? "e.g. MegaCorp Philippines" : "e.g. BGC CCTV Site Survey"} required />
             </div>
             <div>
               <label style={labelStyle}>Client Name</label>
-              <input value={client} onChange={e => setClient(e.target.value)} style={inputStyle} placeholder="e.g. MegaCorp Philippines" required />
+              <input value={client} onChange={e => setClient(e.target.value)} style={inputStyle} placeholder="e.g. Juan Dela Cruz" required />
             </div>
           </div>
 

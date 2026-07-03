@@ -505,6 +505,7 @@ function DetectionForm({ data, onChange }: { data: any; onChange: any }) {
         <div>
           <label className="block text-xs font-bold text-slate-600 mb-1.5">Preferred Brand</label>
           <select value={data.preferredBrand || ''} onChange={e => onChange('preferredBrand', e.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200/60 bg-white/50 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 focus:outline-none transition-all">
+<<<<<<< Updated upstream
             <option value="">Select brand...</option>
             <option value="ASENWARE">ASENWARE</option>
             <option value="EDWARDS">EDWARDS</option>
@@ -515,6 +516,17 @@ function DetectionForm({ data, onChange }: { data: any; onChange: any }) {
             <option value="HORING-LIH">HORING-LIH</option>
             <option value="NOTIFIER">NOTIFIER</option>
             <option value="SIMPLEX">SIMPLEX</option>
+=======
+            <option value="">Select...</option>
+            <option value="Asenware">Asenware</option>
+            <option value="Edwards">Edwards</option>
+            <option value="GST">GST</option>
+            <option value="Hochiki">Hochiki</option>
+            <option value="Honeywell">Honeywell</option>
+            <option value="Horing-Lih">Horing-Lih</option>
+            <option value="Notifier">Notifier</option>
+            <option value="Simplex">Simplex</option>
+>>>>>>> Stashed changes
             <option value="TYY">TYY</option>
           </select>
         </div>

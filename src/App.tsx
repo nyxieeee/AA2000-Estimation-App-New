@@ -27,6 +27,7 @@ export interface Project {
   id: string;
   name: string;
   clientName: string;
+  clientContactName?: string;
   clientEmail?: string;
   clientPhone?: string;
   location: string;
@@ -316,6 +317,7 @@ export default function App() {
       id: `project-${Date.now()}`,
       name: data.projectName,
       clientName: data.companyName,
+      clientContactName: data.clientName,
       clientEmail: data.clientEmail,
       clientPhone: data.clientContactNumber,
       location: data.locationName,

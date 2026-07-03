@@ -30,6 +30,60 @@ function mapCategoryToOption(cat: string): string {
   return 'Other';
 }
 
+function getBrandFromProduct(p: any): string {
+  if (p.brand && p.brand !== 'N/A' && p.brand !== '-') {
+    return p.brand;
+  }
+  const sheet = (p.sheetName || '').toUpperCase();
+  if (sheet.includes('HIKVISION')) return 'Hikvision';
+  if (sheet.includes('DAHUA')) return 'Dahua';
+  if (sheet.includes('EZVIZ')) return 'Ezviz';
+  if (sheet.includes('ZKTECO') || sheet.includes('ZK_') || sheet.startsWith('ZK')) return 'ZkTeco';
+  if (sheet.includes('HONEYWELL')) return 'Honeywell';
+  if (sheet.includes('PARADOX')) return 'Paradox';
+  if (sheet.includes('ASENWARE')) return 'Asenware';
+  if (sheet.includes('HOCHIKI')) return 'Hochiki';
+  if (sheet.includes('NOTIFIER')) return 'Notifier';
+  if (sheet.includes('SIMPLEX')) return 'Simplex';
+  if (sheet.includes('GST')) return 'GST';
+  if (sheet.includes('AIPHONE')) return 'Aiphone';
+  if (sheet.includes('FARFISA')) return 'Farfisa';
+  if (sheet.includes('TOA')) return 'TOA';
+  if (sheet.includes('AVTECH')) return 'Avtech';
+  if (sheet.includes('GARRETT')) return 'Garrett';
+  if (sheet.includes('UNIQSCAN')) return 'Uniqscan';
+  if (sheet.includes('DAOSAFE')) return 'Daosafe';
+  if (sheet.includes('EDWARDS')) return 'Edwards';
+  if (sheet.includes('GAMEWELL')) return 'Gamewell';
+  if (sheet.includes('HORING-LIH')) return 'Horing-Lih';
+  if (sheet.includes('TYY')) return 'TYY';
+  return '';
+}
+
+function detectBrandFromName(name: string): string {
+  const upper = name.toUpperCase();
+  
+  if (upper.startsWith('DS-')) return 'Hikvision';
+  if (upper.startsWith('DH-')) return 'Dahua';
+  if (upper.startsWith('CP-')) return 'CP Plus';
+  
+  const brands = [
+    'HIKVISION', 'DAHUA', 'EZVIZ', 'ZKTECO', 'HONEYWELL', 'PARADOX', 
+    'ASENWARE', 'HOCHIKI', 'NOTIFIER', 'SIMPLEX', 'GST', 'AIPHONE', 
+    'FARFISA', 'TOA', 'AVTECH', 'GARRETT', 'UNIQSCAN', 'DAOSAFE', 
+    'EDWARDS', 'GAMEWELL', 'HORING-LIH', 'TYY', 'MAKITA', 'COMMSCOPE', 
+    'PANDUIT', 'ALANTEK', 'SYSTIMAX', 'LINKBASIC'
+  ];
+  
+  for (const b of brands) {
+    if (upper.includes(b)) {
+      if (b === 'ZKTECO') return 'ZkTeco';
+      return b.charAt(0) + b.slice(1).toLowerCase();
+    }
+  }
+  return '';
+}
+
 // Maps each system type to the sheetName values in products.json that belong to it.
 // 'SHARED' sheets (consumables, wires) are always included regardless of system.
 const SYSTEM_SHEET_MAP: Record<string, string[]> = {
@@ -117,7 +171,7 @@ function createManpower(): EstimationManpowerEntry {
 }
 
 function createConsumable(): EstimationConsumableEntry {
-  return { id: crypto.randomUUID(), name: '', category: 'Hardware', quantity: 1, unit: 'pcs', unitPrice: 0, totalPrice: 0 };
+  return { id: crypto.randomUUID(), name: '', brand: '', category: 'Hardware', quantity: 1, unit: 'pcs', unitPrice: 0, totalPrice: 0 };
 }
 
 function createFee(): EstimationAdditionalFeeEntry {
@@ -338,6 +392,12 @@ export default function EstimationSummary({ project, user, onBack, onUpdateStatu
     setConsumables(prev => prev.map(c => {
       if (c.id !== id) return c;
       const updated = { ...c, [field]: value };
+      if (field === 'name') {
+        const detected = detectBrandFromName(String(value));
+        if (detected) {
+          updated.brand = detected;
+        }
+      }
       if (field === 'quantity' || field === 'unitPrice') {
         const qty = field === 'quantity' ? Number(value) : c.quantity;
         const prc = field === 'unitPrice' ? Number(value) : c.unitPrice;
@@ -432,6 +492,7 @@ export default function EstimationSummary({ project, user, onBack, onUpdateStatu
       return {
         id: crypto.randomUUID(),
         name: matched ? matched.name : defaultName,
+        brand: matched ? (getBrandFromProduct(matched) || matched.brand || '') : '',
         category: matched ? mapCategoryToOption(matched.category) : defaultCategory,
         quantity,
         unit: defaultUnit,
@@ -533,13 +594,14 @@ export default function EstimationSummary({ project, user, onBack, onUpdateStatu
         const heat = Number(s.data.heatDetectors) || 0;
         const mcp = Number(s.data.mcpCount) || 0;
         const sounders = Number(s.data.sounders) || 0;
+        const prefBrand = s.data.preferredBrand;
         totalItemsCount += smoke + heat + mcp + sounders + 1;
 
-        if (smoke > 0) items.push(matchDbProduct('Smoke Detector', 'Smoke Detector', 'Hardware', 'pcs', smoke));
-        if (heat > 0) items.push(matchDbProduct('Heat Detector', 'Heat Detector', 'Hardware', 'pcs', heat));
-        if (mcp > 0) items.push(matchDbProduct('Manual Call Point', 'Manual Call Point', 'Hardware', 'pcs', mcp));
-        if (sounders > 0) items.push(matchDbProduct('Sounder', 'Fire Alarm Sounder', 'Hardware', 'pcs', sounders));
-        items.push(matchDbProduct('Control Panel', 'FDAS Control Panel', 'Hardware', 'pcs', 1));
+        if (smoke > 0) items.push(matchDbProduct('Smoke Detector', 'Smoke Detector', 'Hardware', 'pcs', smoke, prefBrand));
+        if (heat > 0) items.push(matchDbProduct('Heat Detector', 'Heat Detector', 'Hardware', 'pcs', heat, prefBrand));
+        if (mcp > 0) items.push(matchDbProduct('Manual Call Point', 'Manual Call Point', 'Hardware', 'pcs', mcp, prefBrand));
+        if (sounders > 0) items.push(matchDbProduct('Sounder', 'Fire Alarm Sounder', 'Hardware', 'pcs', sounders, prefBrand));
+        items.push(matchDbProduct('Control Panel', 'FDAS Control Panel', 'Hardware', 'pcs', 1, prefBrand));
         items.push(matchDbProduct('Fire Resistant Cable', 'Fire Resistant Cable', 'Wires & Cables', 'meters', (smoke + heat + mcp + sounders) * 20));
       } else if (s.type === 'ACCESS_CONTROL') {
         const doors = Number(s.data.doorCount) || 0;
@@ -756,6 +818,7 @@ export default function EstimationSummary({ project, user, onBack, onUpdateStatu
             return {
               id: crypto.randomUUID(),
               name: matched ? matched.name : c.name,
+              brand: matched ? (getBrandFromProduct(matched) || matched.brand || '') : '',
               category: matched ? mapCategoryToOption(matched.category) : c.category,
               quantity: c.quantity,
               unit: c.unit || 'pcs',
@@ -921,22 +984,32 @@ export default function EstimationSummary({ project, user, onBack, onUpdateStatu
           <h2 style="font-size: 11px; font-weight: 900; color: #1E3A8A; text-transform: uppercase; margin: 20px 0 6px 0; letter-spacing: 0.05em;">Project Summary</h2>
           <table style="width: 100%; border-collapse: collapse; font-size: 10px; font-family: 'Inter', sans-serif;">
             <tr>
-              <td style="width: 16%; padding: 8px 10px; border: 1px solid #E2E8F0; background: #F8FAFC; font-weight: 700; color: #475569;">Client</td>
+              <td style="width: 16%; padding: 8px 10px; border: 1px solid #E2E8F0; background: #F8FAFC; font-weight: 700; color: #475569;">Company Name</td>
               <td style="width: 34%; padding: 8px 10px; border: 1px solid #E2E8F0; color: #1E293B; font-weight: 600;">${project.clientName}</td>
-              <td style="width: 16%; padding: 8px 10px; border: 1px solid #E2E8F0; background: #F8FAFC; font-weight: 700; color: #475569;">Location</td>
-              <td style="width: 34%; padding: 8px 10px; border: 1px solid #E2E8F0; color: #1E293B; font-weight: 600;">${project.location}</td>
+              <td style="width: 16%; padding: 8px 10px; border: 1px solid #E2E8F0; background: #F8FAFC; font-weight: 700; color: #475569;">Client Name</td>
+              <td style="width: 34%; padding: 8px 10px; border: 1px solid #E2E8F0; color: #1E293B; font-weight: 600;">${project.clientContactName || 'N/A'}</td>
             </tr>
             <tr>
+              <td style="padding: 8px 10px; border: 1px solid #E2E8F0; background: #F8FAFC; font-weight: 700; color: #475569;">Address</td>
+              <td style="padding: 8px 10px; border: 1px solid #E2E8F0; color: #1E293B; font-weight: 600;">${project.location}</td>
+              <td style="padding: 8px 10px; border: 1px solid #E2E8F0; background: #F8FAFC; font-weight: 700; color: #475569;">Client Contact</td>
+              <td style="padding: 8px 10px; border: 1px solid #E2E8F0; color: #1E293B; font-weight: 600;">${project.clientPhone || 'No Contact'}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 10px; border: 1px solid #E2E8F0; background: #F8FAFC; font-weight: 700; color: #475569;">Client Email</td>
+              <td style="padding: 8px 10px; border: 1px solid #E2E8F0; color: #1E293B; font-weight: 600;">${project.clientEmail || 'No Email'}</td>
               <td style="padding: 8px 10px; border: 1px solid #E2E8F0; background: #F8FAFC; font-weight: 700; color: #475569;">Technician</td>
               <td style="padding: 8px 10px; border: 1px solid #E2E8F0; color: #1E293B; font-weight: 600;">${technicianName}</td>
-              <td style="padding: 8px 10px; border: 1px solid #E2E8F0; background: #F8FAFC; font-weight: 700; color: #475569;">Status</td>
-              <td style="padding: 8px 10px; border: 1px solid #E2E8F0; color: #059669; font-weight: 700; text-transform: uppercase; font-size: 9px; letter-spacing: 0.02em;">${project.status === 'Completed' ? 'Finalized - Approved' : project.status}</td>
             </tr>
             <tr>
-              <td style="padding: 8px 10px; border: 1px solid #E2E8F0; background: #F8FAFC; font-weight: 700; color: #475569;">Finalized At</td>
+              <td style="padding: 8px 10px; border: 1px solid #E2E8F0; background: #F8FAFC; font-weight: 700; color: #475569;">Status</td>
+              <td style="padding: 8px 10px; border: 1px solid #E2E8F0; color: #059669; font-weight: 700; text-transform: uppercase; font-size: 9px; letter-spacing: 0.02em;">${project.status === 'Completed' ? 'Finalized - Approved' : project.status}</td>
+              <td style="padding: 8px 10px; border: 1px solid #E2E8F0; background: #F8FAFC; font-weight: 700; color: #475569;">Finalized at</td>
               <td style="padding: 8px 10px; border: 1px solid #E2E8F0; color: #1E293B; font-weight: 600;">${formattedDate}</td>
+            </tr>
+            <tr>
               <td style="padding: 8px 10px; border: 1px solid #E2E8F0; background: #F8FAFC; font-weight: 700; color: #475569;">Total Cost</td>
-              <td style="padding: 8px 10px; border: 1px solid #E2E8F0; color: #1E3A8A; font-weight: 900; font-size: 11px;">PHP ${grandTotalWithVAT.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+              <td colspan="3" style="padding: 8px 10px; border: 1px solid #E2E8F0; color: #1E3A8A; font-weight: 900; font-size: 11px;">PHP ${grandTotalWithVAT.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
             </tr>
           </table>
 
@@ -1065,21 +1138,23 @@ export default function EstimationSummary({ project, user, onBack, onUpdateStatu
               <table style="width: 100%; border-collapse: collapse; font-size: 8.5px; font-family: 'Inter', sans-serif;">
                 <thead>
                   <tr style="background: #F8FAFC; text-align: left;">
-                    <th style="padding: 5px 6px; border: 1px solid #E2E8F0; color: #475569; font-weight: 700; width: 60%;">Consumable</th>
+                    <th style="padding: 5px 6px; border: 1px solid #E2E8F0; color: #475569; font-weight: 700; width: 45%;">Consumable</th>
+                    <th style="padding: 5px 6px; border: 1px solid #E2E8F0; color: #475569; font-weight: 700; width: 20%;">Brand</th>
                     <th style="padding: 5px 6px; border: 1px solid #E2E8F0; color: #475569; font-weight: 700; width: 15%; text-align: center;">Qty</th>
-                    <th style="padding: 5px 6px; border: 1px solid #E2E8F0; color: #475569; font-weight: 700; width: 25%; text-align: right;">Line Cost</th>
+                    <th style="padding: 5px 6px; border: 1px solid #E2E8F0; color: #475569; font-weight: 700; width: 20%; text-align: right;">Line Cost</th>
                   </tr>
                 </thead>
                 <tbody>
                   ${consumables.length > 0 ? consumables.map(c => `
                     <tr>
-                      <td style="padding: 5px 6px; border: 1px solid #E2E8F0; color: #1E293B; font-weight: 600; line-clamp: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px;" title="${c.name}">${c.name}</td>
+                      <td style="padding: 5px 6px; border: 1px solid #E2E8F0; color: #1E293B; font-weight: 600; line-clamp: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 135px;" title="${c.name}">${c.name}</td>
+                      <td style="padding: 5px 6px; border: 1px solid #E2E8F0; color: #1E293B; font-weight: 600; line-clamp: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 60px;" title="${c.brand || ''}">${c.brand || '-'}</td>
                       <td style="padding: 5px 6px; border: 1px solid #E2E8F0; text-align: center; color: #1E293B; font-weight: 600;">${c.quantity} ${c.unit || 'pcs'}</td>
                       <td style="padding: 5px 6px; border: 1px solid #E2E8F0; text-align: right; color: #1E293B; font-weight: 600;">PHP ${(c.totalPrice || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
                     </tr>
                   `).join('') : `
                     <tr>
-                      <td colspan="3" style="padding: 8px; border: 1px solid #E2E8F0; text-align: center; color: #94A3B8; font-weight: 600;">No consumables recorded</td>
+                      <td colspan="4" style="padding: 8px; border: 1px solid #E2E8F0; text-align: center; color: #94A3B8; font-weight: 600;">No consumables recorded</td>
                     </tr>
                   `}
                 </tbody>
@@ -1170,7 +1245,7 @@ export default function EstimationSummary({ project, user, onBack, onUpdateStatu
   return (
     <div className="min-h-screen pb-16" style={{ background: '#F8FAFC' }}>
       {/* Header */}
-      <header className="px-6 py-4 bg-gradient-to-r from-white to-blue-50 border-b border-slate-200 shadow-sm">
+      <header className="sticky top-0 z-40 px-6 py-4 bg-gradient-to-r from-white/95 to-blue-50/95 border-b border-slate-200 shadow-sm backdrop-blur-md">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <button
             onClick={onBack}
@@ -1415,7 +1490,7 @@ export default function EstimationSummary({ project, user, onBack, onUpdateStatu
             </div>
             {addBtn('Add Row', () => setManpower(prev => [...prev, createManpower()]))}
           </div>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto no-scrollbar">
             <table className="w-full">
               <thead>
                 <tr>
@@ -1498,13 +1573,13 @@ export default function EstimationSummary({ project, user, onBack, onUpdateStatu
               {addBtn('Add Item', () => setConsumables(prev => [...prev, createConsumable()]))}
             </div>
           </div>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto no-scrollbar">
             <table className="w-full">
               <thead>
                 <tr>
                   {(showPrices
-                    ? ['Item / Model Name', 'Category', 'Qty', 'Unit', 'Unit Price (₱)', 'Total Price (₱)', 'Notes', '']
-                    : ['Item / Model Name', 'Category', 'Qty', 'Unit', 'Notes', '']
+                    ? ['Item / Model Name', 'Brand', 'Category', 'Qty', 'Unit', 'Unit Price (₱)', 'Total Price (₱)', 'Notes', '']
+                    : ['Item / Model Name', 'Brand', 'Category', 'Qty', 'Unit', 'Notes', '']
                   ).map(h => (
                     <th key={h} style={tableHeadStyle}>{h}</th>
                   ))}
@@ -1526,7 +1601,7 @@ export default function EstimationSummary({ project, user, onBack, onUpdateStatu
                           setSearchQuery(c.name);
                         }}
                         placeholder="Type model or description..."
-                        style={{ ...inputStyle, width: '220px' }}
+                        style={{ ...inputStyle, width: '180px' }}
                       />
 
                       {activeSearchId === c.id && (
@@ -1591,6 +1666,7 @@ export default function EstimationSummary({ project, user, onBack, onUpdateStatu
                                         ...item,
                                         productId: p.id,
                                         name: p.name,
+                                        brand: getBrandFromProduct(p) || p.brand || '',
                                         category: mapCategoryToOption(p.category),
                                         unitPrice,
                                         totalPrice: unitPrice * item.quantity,
@@ -1622,8 +1698,16 @@ export default function EstimationSummary({ project, user, onBack, onUpdateStatu
                       )}
                     </td>
                     <td className="py-2.5 pr-2">
+                      <input
+                        value={c.brand || ''}
+                        onChange={e => updateConsumable(c.id, 'brand', e.target.value)}
+                        placeholder="e.g. Hikvision"
+                        style={{ ...inputStyle, width: '85px' }}
+                      />
+                    </td>
+                    <td className="py-2.5 pr-2">
                       <select value={c.category} onChange={e => updateConsumable(c.id, 'category', e.target.value)}
-                        style={{ ...inputStyle, width: '130px', cursor: 'pointer' }}>
+                        style={{ ...inputStyle, width: '120px', cursor: 'pointer' }}>
                         <option>Hardware</option>
                         <option>Wires & Cables</option>
                         <option>Mounting Hardware</option>
@@ -1636,17 +1720,17 @@ export default function EstimationSummary({ project, user, onBack, onUpdateStatu
                     </td>
                     <td className="py-2.5 pr-2">
                       <input type="number" min={1} value={c.quantity} onChange={e => updateConsumable(c.id, 'quantity', Number(e.target.value))}
-                        style={{ ...inputStyle, width: '70px' }} />
+                        style={{ ...inputStyle, width: '50px' }} />
                     </td>
                     <td className="py-2.5 pr-2">
                       <input value={c.unit || 'pcs'} onChange={e => updateConsumable(c.id, 'unit', e.target.value)} placeholder="pcs"
-                        style={{ ...inputStyle, width: '70px' }} />
+                        style={{ ...inputStyle, width: '55px' }} />
                     </td>
                     {showPrices && (
                       <>
                         <td className="py-2.5 pr-2">
                           <input type="number" min={0} value={c.unitPrice || 0} onChange={e => updateConsumable(c.id, 'unitPrice', Number(e.target.value))}
-                            style={{ ...inputStyle, width: '100px' }} />
+                            style={{ ...inputStyle, width: '80px' }} />
                         </td>
                         <td className="py-2.5 pr-2">
                           <span className="text-xs font-black text-slate-700">
@@ -1657,13 +1741,13 @@ export default function EstimationSummary({ project, user, onBack, onUpdateStatu
                     )}
                     <td className="py-2.5 pr-2">
                       <input value={c.notes || ''} onChange={e => updateConsumable(c.id, 'notes', e.target.value)} placeholder="Optional note..."
-                        style={{ ...inputStyle, width: '140px', fontSize: '11px' }} />
+                        style={{ ...inputStyle, width: '110px', fontSize: '11px' }} />
                     </td>
                     <td className="py-2.5">{removeBtn(() => setConsumables(prev => prev.filter(x => x.id !== c.id)))}</td>
                   </tr>
                 ))}
                 {consumables.length === 0 && (
-                  <tr><td colSpan={showPrices ? 8 : 6} className="py-8 text-center text-xs text-slate-400 font-semibold">No materials added yet.</td></tr>
+                  <tr><td colSpan={showPrices ? 9 : 7} className="py-8 text-center text-xs text-slate-400 font-semibold">No materials added yet.</td></tr>
                 )}
                 {showPrices && consumables.length > 0 && (() => {
                   const totalLabor = manpower.reduce((sum, m) => sum + (m.totalCost ?? 0), 0);
@@ -1673,20 +1757,20 @@ export default function EstimationSummary({ project, user, onBack, onUpdateStatu
                   return (
                     <>
                       <tr>
-                        <td colSpan={5} className="pt-4 pb-1">
+                        <td colSpan={6} className="pt-4 pb-1">
                           <div className="border-t border-slate-200" />
                         </td>
                         <td colSpan={3} className="pt-4 pb-1" />
                       </tr>
                       <tr>
-                        <td colSpan={5} className="py-1 text-right text-[10px] font-black uppercase tracking-wider text-slate-400 pr-3">Materials Subtotal</td>
+                        <td colSpan={6} className="py-1 text-right text-[10px] font-black uppercase tracking-wider text-slate-400 pr-3">Materials Subtotal</td>
                         <td className="py-1 text-xs font-black text-amber-700">
                           ₱{totalMaterials.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </td>
                         <td colSpan={2} />
                       </tr>
                       <tr>
-                        <td colSpan={5} className="py-1 text-right text-[10px] font-black uppercase tracking-wider text-slate-400 pr-3">Labor Subtotal</td>
+                        <td colSpan={6} className="py-1 text-right text-[10px] font-black uppercase tracking-wider text-slate-400 pr-3">Labor Subtotal</td>
                         <td className="py-1 text-xs font-black text-blue-700">
                           ₱{totalLabor.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </td>
@@ -1694,7 +1778,7 @@ export default function EstimationSummary({ project, user, onBack, onUpdateStatu
                       </tr>
                       {totalFees > 0 && (
                         <tr>
-                          <td colSpan={5} className="py-1 text-right text-[10px] font-black uppercase tracking-wider text-slate-400 pr-3">Fees Subtotal</td>
+                          <td colSpan={6} className="py-1 text-right text-[10px] font-black uppercase tracking-wider text-slate-400 pr-3">Fees Subtotal</td>
                           <td className="py-1 text-xs font-black text-rose-700">
                             ₱{totalFees.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </td>
@@ -1702,7 +1786,7 @@ export default function EstimationSummary({ project, user, onBack, onUpdateStatu
                         </tr>
                       )}
                       <tr>
-                        <td colSpan={5} className="pt-2 pb-3 text-right text-xs font-black uppercase tracking-wider text-slate-700 pr-3">GRAND TOTAL</td>
+                        <td colSpan={6} className="pt-2 pb-3 text-right text-xs font-black uppercase tracking-wider text-slate-700 pr-3">GRAND TOTAL</td>
                         <td className="pt-2 pb-3">
                           <span className="text-sm font-black px-3 py-1 rounded-lg" style={{ background: '#EFF6FF', color: '#1E3A8A' }}>
                             ₱{grandTotal.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -1804,32 +1888,34 @@ export default function EstimationSummary({ project, user, onBack, onUpdateStatu
         </div>
 
         {/* Bottom Actions */}
-        <div className="flex items-center justify-between gap-3">
-          <button onClick={onBack} className="px-6 py-3 rounded-xl text-xs font-bold bg-white text-slate-500 border border-slate-200 hover:text-slate-800 transition-colors">
-            Back to Project
-          </button>
-          <button
-            onClick={() => {
-              const estimationData = {
-                manpower,
-                consumables,
-                fees,
-                constraints,
-                priceTier
-              };
-              localStorage.setItem(`aa2000_estimation_${project.id}`, JSON.stringify(estimationData));
-              if (user && user.role === 'TECHNICIAN' && onUpdateStatus) {
-                onUpdateStatus(project.id, 'Completed');
-              }
-              alert('Estimation details successfully saved into localized system record.');
-              onBack();
-            }}
-            className="px-8 py-3 rounded-xl text-xs font-bold text-white transition-all shadow-sm hover:opacity-95"
-            style={{ background: '#1E3A8A' }}
-          >
-            Save Estimation
-          </button>
-        </div>
+        {user?.role !== 'ADMIN' && (
+          <div className="flex items-center justify-between gap-3">
+            <button onClick={onBack} className="px-6 py-3 rounded-xl text-xs font-bold bg-white text-slate-500 border border-slate-200 hover:text-slate-800 transition-colors">
+              Back to Project
+            </button>
+            <button
+              onClick={() => {
+                const estimationData = {
+                  manpower,
+                  consumables,
+                  fees,
+                  constraints,
+                  priceTier
+                };
+                localStorage.setItem(`aa2000_estimation_${project.id}`, JSON.stringify(estimationData));
+                if (user && user.role === 'TECHNICIAN' && onUpdateStatus) {
+                  onUpdateStatus(project.id, 'Completed');
+                }
+                alert('Estimation details successfully saved into localized system record.');
+                onBack();
+              }}
+              className="px-8 py-3 rounded-xl text-xs font-bold text-white transition-all shadow-sm hover:opacity-95"
+              style={{ background: '#1E3A8A' }}
+            >
+              Save Estimation
+            </button>
+          </div>
+        )}
 
       </main>
 
