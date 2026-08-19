@@ -373,6 +373,7 @@ export default function Sidebar({ user, currentView, onNavigate, notifications, 
       label: 'SURVEYS',
       items: [
         { view: 'dashboard', label: 'Dashboard' },
+        { view: 'home', label: 'Companies' },
         { view: 'calendar', label: 'Survey Calendar' },
       ],
     },

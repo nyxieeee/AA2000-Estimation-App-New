@@ -74,6 +74,17 @@ function run() {
     fs.mkdirSync(outputDir, { recursive: true });
   }
 
+  if (!fs.existsSync(pricelistDir)) {
+    const existingFile = path.join(outputDir, 'pricelistData.json');
+    if (fs.existsSync(existingFile)) {
+      console.log('pricelist directory not found. Using existing src/data/pricelistData.json');
+      return;
+    }
+    console.log('pricelist directory not found. Creating fallback src/data/pricelistData.json');
+    fs.writeFileSync(existingFile, '[]', 'utf8');
+    return;
+  }
+
   const files = fs.readdirSync(pricelistDir).filter(f => f.endsWith('.csv'));
   const products = [];
   let idCounter = 1;

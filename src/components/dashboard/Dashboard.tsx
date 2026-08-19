@@ -572,7 +572,7 @@ export default function Dashboard({
               onNewSurvey={onNavigateToCreate}
               onDeleteProject={handleDelete}
             />
-          ) : view === 'ai-reader' || view === 'floor-plan' || isCategoryView ? (
+          ) : view === 'home' || view === 'ai-reader' || view === 'floor-plan' || isCategoryView ? (
             <Home
               user={user}
               projects={projectList}
@@ -668,7 +668,7 @@ export default function Dashboard({
                       </>
                     ) : (
                       <>
-                        <StatCard label="Companies" value={companyCount} sub="Company folders" icon={<StatBuilding className="w-5 h-5" />} color={theme.primary} bg={theme.primaryAlpha08} delay={0} onClick={() => navigate('workspace')} />
+                        <StatCard label="Companies" value={companyCount} sub="Company folders" icon={<StatBuilding className="w-5 h-5" />} color={theme.primary} bg={theme.primaryAlpha08} delay={0} onClick={() => navigate('home')} />
                         <StatCard label="Projects" value={totalProjects} sub="All site surveys" icon={<StatClipboard className="w-5 h-5" />} color={theme.primary} bg={theme.primaryAlpha08} delay={50} onClick={() => navigate('assignment')} />
                         <StatCard label="In Progress" value={inProgressCount} sub="Ongoing surveys" icon={<StatBolt className="w-5 h-5" />} color={theme.primary} bg={theme.primaryAlpha08} delay={100} onClick={() => navigate('workspace')} />
                         <StatCard label="Pending" value={pendingCount} sub="Awaiting start" icon={<StatCalendar className="w-5 h-5" />} color="#CA8A04" bg="rgba(202,138,4,0.08)" delay={150} onClick={() => navigate('workspace')} />
