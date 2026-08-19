@@ -1,0 +1,32 @@
+{
+  "name": "aa2000-site-survey",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "start": "vite",
+    "build:pricelist": "node scripts/buildPricelist.js",
+    "build": "npm run build:pricelist && vite build",
+    "lint": "tsc --noEmit",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "@tailwindcss/vite": "^4.0.0",
+    "clsx": "^2.1.0",
+    "framer-motion": "^12.0.0",
+    "mammoth": "^1.12.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tailwindcss": "^4.0.0",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.0.0",
+    "typescript": "~5.8.0",
+    "vite": "^6.0.0"
+  }
+}
