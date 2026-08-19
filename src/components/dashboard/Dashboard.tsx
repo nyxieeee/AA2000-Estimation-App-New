@@ -354,7 +354,12 @@ export default function Dashboard({
       localStorage.setItem('aa2000_surveys', JSON.stringify(remaining));
     } catch { }
     setPinned(prev => { const n = new Set(prev); idsToDelete.forEach(dId => n.delete(dId)); return n; });
-    idsToDelete.forEach(dId => { if (onDeleteProject) onDeleteProject(dId); });
+    idsToDelete.forEach(dId => {
+      try {
+        localStorage.removeItem(`aa2000_estimation_${dId}`);
+      } catch { }
+      if (onDeleteProject) onDeleteProject(dId);
+    });
     setDeleteConfirm(null);
     setMenuOpen(null);
   };
@@ -573,8 +578,25 @@ export default function Dashboard({
               projects={projectList}
               categoryFilter={categoryFilter}
               onSelectCompany={companyName => {
-                const found = projectList.find(p => p.name === companyName);
-                if (found) setSelectedCompanyProject(found);
+                const clean = (s?: string) => (s || '').trim().toLowerCase();
+                const target = clean(companyName);
+                const found = projectList.find(
+                  p => clean(p.name) === target || clean(p.clientName) === target
+                );
+                if (found) {
+                  setSelectedCompanyProject(found);
+                } else {
+                  setSelectedCompanyProject({
+                    id: `company-synth-${Date.now()}`,
+                    name: companyName,
+                    clientName: companyName,
+                    location: '',
+                    buildingType: 'Other',
+                    status: 'Pending',
+                    assignedTechnicians: [],
+                    createdAt: new Date().toISOString(),
+                  });
+                }
               }}
               onSelectProject={onSelectProject}
               onNewCompanyClick={() => { setIsCompanyMode(true); setShowCreate(true); }}
@@ -602,9 +624,16 @@ export default function Dashboard({
           ) : view === 'saved-boqs' ? (
             <SavedBOQsView />
           ) : view === 'history' ? (
-            <SavedEstimationsView projects={projectList} statusFilter={['Completed', 'Finalized - Approved', 'Finalized - Rejected', 'Unknown']} />
+            <SavedEstimationsView
+              projects={projectList}
+              statusFilter={['Completed', 'Finalized - Approved', 'Finalized - Rejected', 'Unknown']}
+              onDeleteProject={handleDelete}
+            />
           ) : view === 'saved-estimations' ? (
-            <SavedEstimationsView projects={projectList} />
+            <SavedEstimationsView
+              projects={projectList}
+              onDeleteProject={handleDelete}
+            />
           ) : (
             <div className="pb-10">
               {/* Dashboard view: title + stats */}
@@ -674,9 +703,9 @@ export default function Dashboard({
                       </div>
 
                       {/* Project Cards Grid */}
-                      {projectList.length > 0 ? (
+                      {actualProjects.length > 0 ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                          {projectList.slice(0, 6).map((p) => {
+                          {actualProjects.slice(0, 6).map((p) => {
                             const isPending = p.status === 'Pending';
                             return (
                               <div

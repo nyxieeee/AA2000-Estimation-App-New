@@ -172,7 +172,7 @@ export default function CreateProjectModal({ userRole, onClose, onCreate, isComp
       latitude: mapClicked ? latitude : undefined,
       longitude: mapClicked ? longitude : undefined,
       isNewBuilding: isNewBuilding === 'Yes',
-      buildingType,
+      buildingType: isCompanyMode ? 'Other' : buildingType,
       buildingLength: l > 0 ? l : undefined,
       buildingWidth: w > 0 ? w : undefined,
       floorHeight: parseFloat(String(floorHeight)) || undefined,

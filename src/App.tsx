@@ -332,7 +332,29 @@ export default function App() {
   }, []);
 
   const handleCreateProject = useCallback((project: Project) => {
-    setProjects(prev => [...prev, project]);
+    setProjects(prev => {
+      const clean = (s?: string) => (s || '').trim().toLowerCase();
+      const hasCompanyFolder = prev.some(
+        p => p.buildingType === 'Other' && (clean(p.name) === clean(project.clientName) || clean(p.clientName) === clean(project.clientName))
+      );
+      const additional: Project[] = [];
+      if (!hasCompanyFolder && project.buildingType !== 'Other' && project.clientName) {
+        additional.push({
+          id: `company-${Date.now()}`,
+          name: project.clientName,
+          clientName: project.clientContactName || project.clientName,
+          clientEmail: project.clientEmail,
+          clientPhone: project.clientPhone,
+          location: project.location || '',
+          buildingType: 'Other',
+          status: 'Pending',
+          systemTypes: project.systemTypes || [],
+          assignedTechnicians: DEFAULT_TECHNICIANS,
+          createdAt: new Date().toISOString(),
+        });
+      }
+      return [...prev, ...additional, project];
+    });
     setCurrentProject(project);
     navigateToScreen('project-detail');
   }, [navigateToScreen]);
@@ -398,6 +420,11 @@ export default function App() {
     } catch (e) {
       console.error('Failed to clean up surveys on deletion', e);
     }
+    try {
+      localStorage.removeItem(`aa2000_estimation_${projectId}`);
+    } catch (e) {
+      console.error('Failed to clean up estimation on deletion', e);
+    }
   }, []);
 
   const handleBackToDashboard = useCallback(() => {
@@ -451,9 +478,32 @@ export default function App() {
     setPrefilledCompanyName('');
 
     setProjects(prev => {
-      const nextProjects = [...prev, newProject];
+      const clean = (s?: string) => (s || '').trim().toLowerCase();
+      const hasCompanyFolder = prev.some(
+        p => p.buildingType === 'Other' && (clean(p.name) === clean(data.companyName) || clean(p.clientName) === clean(data.companyName))
+      );
+
+      const additionalProjects: Project[] = [];
+      if (!hasCompanyFolder && data.companyName) {
+        const newCompanyFolder: Project = {
+          id: `company-${Date.now()}`,
+          name: data.companyName,
+          clientName: data.clientName || data.companyName,
+          clientEmail: data.clientEmail,
+          clientPhone: data.clientContactNumber,
+          location: data.locationName,
+          buildingType: 'Other',
+          status: 'Pending',
+          systemTypes: data.systemTypes || [],
+          assignedTechnicians: DEFAULT_TECHNICIANS,
+          createdAt: now,
+        };
+        additionalProjects.push(newCompanyFolder);
+      }
+
+      const nextProjects = [...prev, ...additionalProjects, newProject];
       if (compName) {
-        const compProj = nextProjects.find(p => p.name === compName || p.clientName === compName);
+        const compProj = nextProjects.find(p => p.buildingType === 'Other' && (clean(p.name) === clean(compName) || clean(p.clientName) === clean(compName)));
         if (compProj) {
           setCurrentCompanyProject(compProj);
         }

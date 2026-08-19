@@ -71,7 +71,15 @@ function grandTotal(est: SavedEstimation): number {
 
 const ARCHIVE_STATUSES = ['Completed', 'Finalized - Approved', 'Finalized - Rejected'];
 
-export default function SavedEstimationsView({ projects, statusFilter }: { projects: Project[]; statusFilter?: string[] }) {
+export default function SavedEstimationsView({
+  projects,
+  statusFilter,
+  onDeleteProject,
+}: {
+  projects: Project[];
+  statusFilter?: string[];
+  onDeleteProject?: (projectId: string) => void;
+}) {
   const { toast, confirm } = useToast();
   const [estimations, setEstimations] = useState<SavedEstimation[]>([]);
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
@@ -92,11 +100,14 @@ export default function SavedEstimationsView({ projects, statusFilter }: { proje
     : estimations;
 
   const handleDelete = async (est: SavedEstimation) => {
-    const ok = await confirm(`Delete saved estimation for "${est.projectName}"? This cannot be undone.`);
+    const ok = await confirm(`Delete saved estimation and project "${est.projectName}"? This cannot be undone.`);
     if (!ok) return;
     localStorage.removeItem(est.key);
+    if (onDeleteProject) {
+      onDeleteProject(est.projectId);
+    }
     refresh();
-    toast.success(`Estimation for "${est.projectName}" deleted.`);
+    toast.success(`Estimation and project "${est.projectName}" deleted.`);
     if (expandedKey === est.key) setExpandedKey(null);
   };
 

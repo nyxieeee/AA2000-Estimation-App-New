@@ -50,11 +50,22 @@ export default function CompanyDetail({
 
   // Find all projects/surveys belonging to this company name
   const companyProjects = useMemo(() => {
-    return projects.filter(
+    const clean = (s?: string) => (s || '').trim().toLowerCase();
+    const cName = clean(companyProject.name);
+    const cClient = clean(companyProject.clientName);
+    const matched = projects.filter(
       p =>
+        p.id !== companyProject.id &&
         p.buildingType !== 'Other' && // Do not include company folders in project tabs
-        (p.clientName === companyProject.name || p.clientName === companyProject.clientName)
+        (clean(p.clientName) === cName ||
+         clean(p.clientName) === cClient ||
+         clean(p.name) === cName ||
+         (cName && clean(p.clientName) && (cName.includes(clean(p.clientName)) || clean(p.clientName).includes(cName))))
     );
+    if (matched.length === 0 && companyProject.buildingType !== 'Other') {
+      return [companyProject];
+    }
+    return matched;
   }, [projects, companyProject]);
 
   // Filter projects by tabs
@@ -77,18 +88,15 @@ export default function CompanyDetail({
       default:
         return companyProjects.filter(p => {
           const isNotComplete = p.status !== 'Completed' && !p.status?.includes('Finalized');
-          const isOnTime = p.startDate && p.startDate >= today;
-          return isNotComplete && isOnTime;
+          return isNotComplete;
         });
     }
   }, [companyProjects, activeTab]);
 
   const countAssignments = useMemo(() => {
-    const today = new Date().toISOString().split('T')[0];
     return companyProjects.filter(p => {
       const isNotComplete = p.status !== 'Completed' && !p.status?.includes('Finalized');
-      const isOnTime = p.startDate && p.startDate >= today;
-      return isNotComplete && isOnTime;
+      return isNotComplete;
     }).length;
   }, [companyProjects]);
 

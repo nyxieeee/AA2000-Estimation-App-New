@@ -186,8 +186,39 @@ export default function Home({
 
   // Filter projects by relevance to the user role
   const userProjects = useMemo(() => {
+    const norm = (s?: string) => (s || '').trim().toLowerCase();
     const companyFoldersOnly = projectList.filter(p => p.buildingType === 'Other');
-    return companyFoldersOnly;
+    const existingFolderKeys = new Set<string>();
+    for (const f of companyFoldersOnly) {
+      if (f.name) existingFolderKeys.add(norm(f.name));
+      if (f.clientName) existingFolderKeys.add(norm(f.clientName));
+    }
+
+    // Also auto-synthesize company folders for any actualProjects that do not have a matching folder
+    const orphanCompanies: Project[] = [];
+    const createdOrphanKeys = new Set<string>();
+    for (const p of projectList.filter(p => p.buildingType !== 'Other')) {
+      const cName = (p.clientName || p.name || '').trim();
+      if (!cName) continue;
+      const key = norm(cName);
+      if (!existingFolderKeys.has(key) && !createdOrphanKeys.has(key)) {
+        createdOrphanKeys.add(key);
+        orphanCompanies.push({
+          id: `company-auto-${p.id}`,
+          name: cName,
+          clientName: p.clientContactName || p.clientName || cName,
+          clientEmail: p.clientEmail,
+          clientPhone: p.clientPhone,
+          location: p.location || p.locationName || '',
+          buildingType: 'Other',
+          status: p.status || 'Pending',
+          systemTypes: p.systemTypes || [],
+          assignedTechnicians: p.assignedTechnicians || [],
+          createdAt: p.createdAt || new Date().toISOString(),
+        });
+      }
+    }
+    return [...companyFoldersOnly, ...orphanCompanies];
   }, [projectList, user]);
 
   // Filter companies by selected system category
