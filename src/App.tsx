@@ -538,7 +538,7 @@ export default function App() {
 
     return (
       <ErrorBoundary>
-        <div className="min-h-screen flex" style={{ background: '#F8FAFC' }}>
+        <div className="min-h-screen flex">
           <Dashboard
             user={user}
             onLogout={handleLogout}
@@ -579,7 +579,7 @@ export default function App() {
   if (screen === 'settings') {
     return (
       <ErrorBoundary>
-        <div className="min-h-screen flex" style={{ background: '#F8FAFC' }}>
+        <div className="min-h-screen flex">
           <Dashboard
             user={user}
             onLogout={handleLogout}

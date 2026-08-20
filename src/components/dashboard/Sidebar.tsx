@@ -24,6 +24,8 @@ interface Props {
   aiScans?: AIScanGroup[];
   onNewSurvey?: () => void;
   isMobile?: boolean;
+  isDark?: boolean;
+  onToggleTheme?: () => void;
 }
 
 const navIcons: Record<string, (active: boolean) => React.ReactNode> = {
@@ -252,9 +254,9 @@ const navIcons: Record<string, (active: boolean) => React.ReactNode> = {
 
 };
 
-export default function Sidebar({ user, currentView, onNavigate, notifications, projects, aiScans, onNewSurvey, isMobile }: Props) {
+export default function Sidebar({ user, currentView, onNavigate, notifications, projects, aiScans, onNewSurvey, isMobile, isDark, onToggleTheme }: Props) {
   const isAdmin = user.role === 'ADMIN';
-  const theme = getRoleTheme(user.role);
+  const theme = getRoleTheme(user.role, isDark);
   const [collapsedState, setCollapsed] = useState(false);
   const collapsed = isMobile ? false : collapsedState;
   const [dashboardDropdownOpen, setDashboardDropdownOpen] = useState(true);
@@ -373,7 +375,6 @@ export default function Sidebar({ user, currentView, onNavigate, notifications, 
       label: 'SURVEYS',
       items: [
         { view: 'dashboard', label: 'Dashboard' },
-        { view: 'home', label: 'Companies' },
         { view: 'calendar', label: 'Survey Calendar' },
       ],
     },
@@ -416,7 +417,7 @@ export default function Sidebar({ user, currentView, onNavigate, notifications, 
     <aside
       className="flex flex-col h-full shrink-0 overflow-hidden transition-all duration-300 w-full"
       style={{
-        width: isMobile ? '100%' : collapsed ? 64 : 240,
+        width: isMobile ? '100%' : collapsed ? 68 : 280,
         background: theme.sidebarBg,
         borderRight: `1px solid ${theme.sidebarBorder}`,
         fontFamily: "'Outfit', sans-serif",
@@ -424,7 +425,7 @@ export default function Sidebar({ user, currentView, onNavigate, notifications, 
     >
       {/* ── Brand Logo / Back + Collapse toggle ── */}
       <div
-        className="px-3 h-16 flex items-center justify-between shrink-0"
+        className="px-4 h-16 flex items-center justify-between shrink-0"
         style={{ borderBottom: `1px solid ${theme.sidebarBorder}` }}
       >
         {isNotificationView ? (
@@ -453,22 +454,15 @@ export default function Sidebar({ user, currentView, onNavigate, notifications, 
             {!collapsed && (
               <div className="min-w-0 overflow-hidden">
                 <span
-                  className="flex items-center leading-tight"
-                  style={{ fontFamily: "'Outfit', sans-serif", letterSpacing: '0' }}
+                  className="text-2xl font-bold leading-none block select-none"
+                  style={{
+                    fontFamily: "'Outfit', sans-serif",
+                    letterSpacing: '0',
+                    color: '#2563EB',
+                    lineHeight: 1,
+                  }}
                 >
-                  {['A', 'A', '2', '0', '0', '0'].map((char, i) => (
-                    <span
-                      key={i}
-                      className="text-2xl font-bold inline-block transition-transform hover:scale-125 hover:-translate-y-0.5"
-                      style={{
-                        color: '#2563EB',
-                        display: 'inline-block',
-                        lineHeight: 1,
-                      }}
-                    >
-                      {char}
-                    </span>
-                  ))}
+                  AA2000
                 </span>
                 <p className="text-[11px] font-normal leading-tight text-[#94A3B8]" style={{ marginTop: '2px' }}>
                   Security and Technology Solutions Inc.
@@ -499,6 +493,39 @@ export default function Sidebar({ user, currentView, onNavigate, notifications, 
             )}
           </button>
         )}
+      </div>
+
+      {/* ── "+ New Survey" Action Button (Below AA2000 Branding) ── */}
+      <div className={`px-3 pt-3 pb-1 shrink-0 ${collapsed ? 'flex justify-center px-2' : ''}`}>
+        <button
+          onClick={() => {
+            if (onNewSurvey) {
+              onNewSurvey();
+            } else {
+              onNavigate('create-survey');
+            }
+          }}
+          title="Create New Site Survey"
+          className={`w-full flex items-center justify-center gap-2 font-bold text-white shadow-md shadow-blue-500/20 hover:shadow-lg hover:shadow-blue-500/30 hover:brightness-105 active:scale-95 transition-all duration-200 cursor-pointer group ${
+            collapsed
+              ? 'w-10 h-10 rounded-xl p-0'
+              : 'py-2.5 px-4 rounded-2xl text-xs sm:text-[13px] tracking-wide'
+          }`}
+          style={{
+            background: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)',
+          }}
+        >
+          <svg
+            className={`${collapsed ? 'w-5 h-5' : 'w-4 h-4'} text-white shrink-0 transition-transform duration-200 group-hover:rotate-90`}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={3}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+          </svg>
+          {!collapsed && <span>New Survey</span>}
+        </button>
       </div>
 
       {/* ── Navigation ── */}
@@ -603,40 +630,58 @@ export default function Sidebar({ user, currentView, onNavigate, notifications, 
         style={{ borderTop: `1px solid ${theme.sidebarBorder}` }}
       >
         {/* User Profile Card */}
-        <div className="px-3 py-3">
-          <div className={`flex items-center gap-2.5 ${collapsed ? 'justify-center' : ''}`}>
+        <div className="p-3">
+          <div
+            className={`flex items-center gap-3 p-2 rounded-2xl transition-all duration-200 ${
+              collapsed
+                ? 'justify-center p-1'
+                : isDark
+                ? 'bg-[#131B2E] hover:bg-[#162032] border border-slate-700/60 shadow-2xs'
+                : 'bg-white/70 hover:bg-white border border-slate-200/60 shadow-2xs'
+            }`}
+          >
             <div className="relative shrink-0">
               <div
-                className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white ring-2 ring-offset-1"
+                className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black text-white shadow-sm"
                 style={{
                   background: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)',
-                  boxShadow: '0 0 0 2px rgba(37,99,235,0.4)',
                 }}
               >
                 {initials}
               </div>
               {/* Online indicator */}
-              <div
-                className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-white"
-                style={{ background: '#22C55E' }}
-              />
+              <div className="absolute -bottom-0.5 -right-0.5 flex h-3 w-3 items-center justify-center">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                <span className={`relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500 border-2 ${isDark ? 'border-[#131B2E]' : 'border-white'}`} />
+              </div>
             </div>
+
             {!collapsed && (
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-bold truncate text-[#1E293B]">
+                <p className={`text-sm font-black truncate leading-tight ${isDark ? 'text-white' : 'text-slate-800'}`}>
                   {user.fullName || user.email}
                 </p>
-                <div className="flex items-center gap-1.5 mt-0.5">
+                <div className="flex items-center gap-1.5 mt-1">
                   <span
-                    className="text-[9px] font-bold px-1.5 py-0.5 rounded-full"
-                    style={{ background: 'rgba(37,99,235,0.12)', color: '#2563EB' }}
+                    className="text-[10px] font-bold px-2 py-0.5 rounded-md"
+                    style={{
+                      background: isDark ? 'rgba(59,130,246,0.20)' : 'rgba(37,99,235,0.12)',
+                      color: isDark ? '#60A5FA' : '#2563EB',
+                    }}
                   >
                     {user.role === 'ADMIN' ? 'Admin' :
                      user.role === 'SALES' ? 'Sales' :
                      user.role === 'MANAGER' ? 'Manager' : 'Tech'}
                   </span>
                   {totalUnread > 0 && (
-                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-red-50 text-red-500">
+                    <span
+                      className="text-[10px] font-bold px-2 py-0.5 rounded-md"
+                      style={{
+                        background: isDark ? 'rgba(239,68,68,0.20)' : '#FEF2F2',
+                        color: isDark ? '#F87171' : '#EF4444',
+                        border: isDark ? '1px solid rgba(239,68,68,0.30)' : '1px solid #FEE2E2',
+                      }}
+                    >
                       {totalUnread} new
                     </span>
                   )}
@@ -646,19 +691,56 @@ export default function Sidebar({ user, currentView, onNavigate, notifications, 
           </div>
         </div>
 
-        {/* System status */}
-        {!collapsed && (
-          <div className="px-4 pb-3 flex items-center justify-between text-[9px]">
+        {/* System status + Theme toggle */}
+        {!collapsed ? (
+          <div className="px-4 pb-3 flex items-center justify-between text-[10px]">
             <div className="flex items-center gap-1.5">
-              <span className="relative flex h-1.5 w-1.5">
+              <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
               </span>
-              <span className="font-bold text-emerald-700 tracking-wider">SYSTEM ONLINE</span>
+              <span className="font-extrabold text-emerald-600 dark:text-emerald-400 tracking-wider">SYSTEM ONLINE</span>
             </div>
-            <span className="text-slate-400 font-medium">v5.0</span>
+            <div className="flex items-center gap-2">
+              {onToggleTheme && (
+                <button
+                  onClick={onToggleTheme}
+                  className="p-1 rounded-md text-slate-400 hover:text-slate-700 dark:hover:text-amber-400 hover:bg-slate-200/50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                  title={isDark ? 'Switch to Light Mode' : 'Switch to Night Mode'}
+                >
+                  {isDark ? (
+                    <svg className="w-3.5 h-3.5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+                    </svg>
+                  ) : (
+                    <svg className="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+                    </svg>
+                  )}
+                </button>
+              )}
+              <span className="text-slate-400 font-semibold">v5.0</span>
+            </div>
           </div>
-        )}
+        ) : onToggleTheme ? (
+          <div className="pb-3 flex justify-center">
+            <button
+              onClick={onToggleTheme}
+              className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-amber-400 hover:bg-slate-200/50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              title={isDark ? 'Switch to Light Mode' : 'Switch to Night Mode'}
+            >
+              {isDark ? (
+                <svg className="w-4 h-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+                </svg>
+              ) : (
+                <svg className="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+                </svg>
+              )}
+            </button>
+          </div>
+        ) : null}
       </div>
     </aside>
   );

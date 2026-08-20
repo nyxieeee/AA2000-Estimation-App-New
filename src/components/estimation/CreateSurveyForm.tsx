@@ -51,20 +51,20 @@ export interface SurveyFormData {
 }
 
 const SYSTEM_OPTIONS: { type: SystemType; label: string; icon: string; color: string; bg: string }[] = [
-  { type: 'CCTV',                label: 'CCTV System',                        icon: '', color: '#1E3A8A', bg: '#EFF6FF' },
-  { type: 'FDAS',                label: 'FDAS / Fire Alarm System',           icon: '', color: '#DC2626', bg: '#FEF2F2' },
-  { type: 'ACCESS_CONTROL',      label: 'Access Control System',              icon: '', color: '#065F46', bg: '#ECFDF5' },
-  { type: 'BURGLAR_ALARM',       label: 'Burglar Alarm System',               icon: '', color: '#92400E', bg: '#FFFBEB' },
-  { type: 'DOOR_LOCK',           label: 'Door Lock System',                   icon: '', color: '#B45309', bg: '#FFFBEB' },
-  { type: 'EAS_SYSTEM',          label: 'EAS System',                         icon: '', color: '#D97706', bg: '#FEF3C7' },
-  { type: 'FIRE_PROTECTION',     label: 'Fire Protection / Suppression',      icon: '', color: '#7E22CE', bg: '#FAF5FF' },
-  { type: 'FIXED_ARM_ELEVATOR',  label: 'Fixed Arm & Elevator Related',       icon: '', color: '#0369A1', bg: '#F0F9FF' },
-  { type: 'INTERCOM_NURSE_CALL', label: 'Intercom & Nurse Call System',       icon: '', color: '#0F766E', bg: '#F0FDFA' },
-  { type: 'PABX_PAGING',         label: 'PABX & Paging System',               icon: '', color: '#4F46E5', bg: '#EEF2FF' },
-  { type: 'PARKING_BARRIER',     label: 'Parking Barrier System',             icon: '', color: '#0891B2', bg: '#ECFEFF' },
-  { type: 'POS_SYSTEM',          label: 'POS System',                         icon: '', color: '#2563EB', bg: '#EFF6FF' },
-  { type: 'ROOM_ALERT',          label: 'Room Alert System',                  icon: '', color: '#E11D48', bg: '#FFF1F2' },
-  { type: 'XRAY_SECURITY',       label: 'X-Ray, Turnstile & Walk-Through',   icon: '', color: '#6B21A8', bg: '#FAF5FF' },
+  { type: 'CCTV',                label: 'CCTV System',                        icon: '', color: '#1D4ED8', bg: '#EFF6FF' },
+  { type: 'FDAS',                label: 'FDAS / Fire Alarm System',           icon: '', color: '#1D4ED8', bg: '#EFF6FF' },
+  { type: 'ACCESS_CONTROL',      label: 'Access Control System',              icon: '', color: '#1D4ED8', bg: '#EFF6FF' },
+  { type: 'BURGLAR_ALARM',       label: 'Burglar Alarm System',               icon: '', color: '#1D4ED8', bg: '#EFF6FF' },
+  { type: 'DOOR_LOCK',           label: 'Door Lock System',                   icon: '', color: '#1D4ED8', bg: '#EFF6FF' },
+  { type: 'EAS_SYSTEM',          label: 'EAS System',                         icon: '', color: '#1D4ED8', bg: '#EFF6FF' },
+  { type: 'FIRE_PROTECTION',     label: 'Fire Protection / Suppression',      icon: '', color: '#1D4ED8', bg: '#EFF6FF' },
+  { type: 'FIXED_ARM_ELEVATOR',  label: 'Fixed Arm & Elevator Related',       icon: '', color: '#1D4ED8', bg: '#EFF6FF' },
+  { type: 'INTERCOM_NURSE_CALL', label: 'Intercom & Nurse Call System',       icon: '', color: '#1D4ED8', bg: '#EFF6FF' },
+  { type: 'PABX_PAGING',         label: 'PABX & Paging System',               icon: '', color: '#1D4ED8', bg: '#EFF6FF' },
+  { type: 'PARKING_BARRIER',     label: 'Parking Barrier System',             icon: '', color: '#1D4ED8', bg: '#EFF6FF' },
+  { type: 'POS_SYSTEM',          label: 'POS System',                         icon: '', color: '#1D4ED8', bg: '#EFF6FF' },
+  { type: 'ROOM_ALERT',          label: 'Room Alert System',                  icon: '', color: '#1D4ED8', bg: '#EFF6FF' },
+  { type: 'XRAY_SECURITY',       label: 'X-Ray, Turnstile & Walk-Through',   icon: '', color: '#1D4ED8', bg: '#EFF6FF' },
 ];
 
 const BUILDING_TYPES = [
@@ -423,7 +423,7 @@ export default function CreateSurveyForm({
                         boxShadow: selected ? `0 0 0 3px ${opt.color}18` : 'none',
                       }}
                     >
-                      <span className="text-2xl">{IconComp ? <IconComp className="w-5 h-5" /> : null}</span>
+                      <span className="text-2xl" style={{ color: selected ? opt.color : '#94A3B8' }}>{IconComp ? <IconComp className="w-5 h-5" /> : null}</span>
                       <div className="flex-1">
                         <p className="text-xs font-black" style={{ color: selected ? opt.color : '#475569' }}>{opt.label}</p>
                         {selected && (

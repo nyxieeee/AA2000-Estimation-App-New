@@ -125,15 +125,15 @@ export async function exportBOQPdf(data: BOQPdfData): Promise<void> {
         <div>
           <h1 style="color: #1E3A8A; font-size: 16px; font-weight: 900; margin: 0; text-transform: uppercase;">${data.title}</h1>
           ${data.projectName ? `<p style="font-size: 11px; color: #475569; font-weight: 700; margin: 3px 0 0 0;">Project: ${data.projectName}</p>` : ''}
-          ${data.systems?.length ? `<p style="font-size: 10px; color: #7C3AED; font-weight: 700; margin: 2px 0 0 0;">Systems: ${data.systems.join(', ')}</p>` : ''}
+          ${data.systems?.length ? `<p style="font-size: 10px; color: #2563EB; font-weight: 700; margin: 2px 0 0 0;">Systems: ${data.systems.join(', ')}</p>` : ''}
         </div>
         <div style="font-size: 10px; color: #64748B; font-weight: 700;">Date: ${formattedDate}</div>
       </div>
 
       ${data.observations ? `
-        <div style="margin-top: 15px; padding: 10px 12px; background: #F3E8FF; border-left: 3px solid #7C3AED; border-radius: 4px;">
-          <div style="font-size: 9px; font-weight: 900; color: #6B21A8; text-transform: uppercase;">AI Analysis Summary</div>
-          <div style="font-size: 10px; color: #581C87; margin-top: 3px; line-height: 1.4;">${data.observations}</div>
+        <div style="margin-top: 15px; padding: 10px 12px; background: #EFF6FF; border-left: 3px solid #2563EB; border-radius: 4px;">
+          <div style="font-size: 9px; font-weight: 900; color: #1E40AF; text-transform: uppercase;">AI Analysis Summary</div>
+          <div style="font-size: 10px; color: #1E3A8A; margin-top: 3px; line-height: 1.4;">${data.observations}</div>
         </div>
       ` : ''}
 

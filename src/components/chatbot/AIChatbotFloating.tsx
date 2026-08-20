@@ -428,7 +428,7 @@ CONVERSATION & RESPONSE RULES:
           className={`group relative flex items-center justify-center p-4 rounded-full shadow-2xl transition-all duration-300 transform hover:scale-105 ${
             isOpen
               ? 'bg-slate-800 text-slate-200 ring-2 ring-slate-600'
-              : 'bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white ring-4 ring-indigo-500/30 hover:ring-indigo-500/60'
+              : 'bg-gradient-to-r from-blue-600 to-blue-700 text-white ring-4 ring-blue-500/30 hover:ring-blue-500/60 shadow-lg shadow-blue-500/25'
           }`}
           title={isOpen ? 'Close AI Assistant' : 'Open AA2000 AI Estimation Assistant'}
         >
@@ -439,7 +439,7 @@ CONVERSATION & RESPONSE RULES:
           ) : (
             <div className="flex items-center gap-2">
               <svg className="w-7 h-7 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z" />
               </svg>
               <span className="hidden md:inline font-bold text-sm tracking-wide pr-1">
                 AI Estimator
@@ -454,9 +454,9 @@ CONVERSATION & RESPONSE RULES:
         <div className="fixed bottom-24 right-4 md:right-6 z-50 w-[calc(100vw-2rem)] md:w-[460px] h-[640px] max-h-[85vh] bg-slate-900/95 backdrop-blur-xl border border-slate-700/60 rounded-2xl shadow-2xl flex flex-col overflow-hidden text-slate-100 animate-in fade-in slide-in-from-bottom-5 duration-200">
           
           {/* Header */}
-          <div className="px-5 py-4 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border-b border-slate-800 flex items-center justify-between">
+          <div className="px-5 py-4 bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 border-b border-slate-800 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-xl bg-indigo-600/30 border border-indigo-500/40 text-indigo-400">
+              <div className="p-2 rounded-xl bg-blue-600/30 border border-blue-500/40 text-blue-400">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19 14.5M14.25 3.104c.251.023.501.05.75.082M19 14.5l-2.47 2.47a2.25 2.25 0 01-1.59.659H9.06a2.25 2.25 0 01-1.591-.659L5 14.5m14 0V17a2.25 2.25 0 01-2.25 2.25H7.25A2.25 2.25 0 015 17v-2.5" />
                 </svg>
@@ -464,8 +464,8 @@ CONVERSATION & RESPONSE RULES:
               <div>
                 <div className="flex items-center gap-2">
                   <h3 className="font-bold text-sm text-white">AA2000 AI Estimator</h3>
-                  <span className="px-2 py-0.5 text-[10px] font-semibold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded-full flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
+                  <span className="px-2 py-0.5 text-[10px] font-semibold bg-blue-500/20 text-blue-300 border border-blue-500/30 rounded-full flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
                     Vision & Docs Active
                   </span>
                 </div>
@@ -495,7 +495,7 @@ CONVERSATION & RESPONSE RULES:
                   onClick={() => setUserTier(tier)}
                   className={`px-2.5 py-1 rounded-md capitalize font-medium text-[11px] transition-all ${
                     userTier === tier
-                      ? 'bg-indigo-600 text-white shadow-sm'
+                      ? 'bg-blue-600 text-white shadow-sm'
                       : 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/50'
                   }`}
                 >
@@ -515,7 +515,7 @@ CONVERSATION & RESPONSE RULES:
                 <div
                   className={`max-w-[88%] p-3.5 rounded-2xl ${
                     msg.sender === 'user'
-                      ? 'bg-indigo-600 text-white rounded-br-none shadow-md'
+                      ? 'bg-blue-600 text-white rounded-br-none shadow-md'
                       : 'bg-slate-800/90 text-slate-200 border border-slate-700/70 rounded-bl-none shadow-sm'
                   }`}
                 >
@@ -531,8 +531,8 @@ CONVERSATION & RESPONSE RULES:
                               className="w-32 h-24 object-cover rounded-lg border border-white/20 shadow-sm"
                             />
                           ) : (
-                            <div className="px-2.5 py-1.5 bg-slate-900/80 border border-slate-700 rounded-lg text-[11px] font-semibold text-indigo-300 flex items-center gap-1.5">
-                              <svg className="w-4 h-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <div className="px-2.5 py-1.5 bg-slate-900/80 border border-slate-700 rounded-lg text-[11px] font-semibold text-blue-300 flex items-center gap-1.5">
+                              <svg className="w-4 h-4 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                               </svg>
                               <span className="truncate max-w-[120px]">{att.name}</span>
@@ -562,7 +562,7 @@ CONVERSATION & RESPONSE RULES:
                           const plainText = msg.text.replace(/\*\*/g, '').replace(/`/g, '').replace(/###\s*/g, '');
                           navigator.clipboard.writeText(plainText);
                         }}
-                        className="text-[11px] text-slate-400 hover:text-indigo-300 flex items-center gap-1 transition-colors"
+                        className="text-[11px] text-slate-400 hover:text-blue-300 flex items-center gap-1 transition-colors"
                       >
                         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -578,9 +578,9 @@ CONVERSATION & RESPONSE RULES:
 
             {isTyping && (
               <div className="flex items-center gap-2 p-3 bg-slate-800/60 border border-slate-700/50 rounded-2xl w-fit text-slate-400 text-xs">
-                <span className="w-2 h-2 rounded-full bg-indigo-400 animate-bounce" />
-                <span className="w-2 h-2 rounded-full bg-indigo-400 animate-bounce delay-100" />
-                <span className="w-2 h-2 rounded-full bg-indigo-400 animate-bounce delay-200" />
+                <span className="w-2 h-2 rounded-full bg-blue-400 animate-bounce" />
+                <span className="w-2 h-2 rounded-full bg-blue-400 animate-bounce delay-100" />
+                <span className="w-2 h-2 rounded-full bg-blue-400 animate-bounce delay-200" />
                 <span>Mistral AI analyzing input & vision data...</span>
               </div>
             )}
@@ -591,11 +591,11 @@ CONVERSATION & RESPONSE RULES:
           {attachedFiles.length > 0 && (
             <div className="px-4 py-2 bg-slate-950/90 border-t border-slate-800 flex gap-2 overflow-x-auto">
               {attachedFiles.map(att => (
-                <div key={att.id} className="relative flex items-center gap-1.5 px-2.5 py-1 bg-slate-800 border border-indigo-500/40 rounded-lg text-xs text-slate-200">
+                <div key={att.id} className="relative flex items-center gap-1.5 px-2.5 py-1 bg-slate-800 border border-blue-500/40 rounded-lg text-xs text-slate-200">
                   {att.type === 'image' && att.dataUrl ? (
                     <img src={att.dataUrl} alt={att.name} className="w-6 h-6 object-cover rounded" />
                   ) : (
-                    <svg className="w-4 h-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-4 h-4 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
                   )}
@@ -639,7 +639,7 @@ CONVERSATION & RESPONSE RULES:
               title="Attach Excel spreadsheets (.xlsx, .xls), PDF, CSV, TXT files, or floor plan images"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4.5 4.5 0 0 0-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
               </svg>
             </button>
 
@@ -650,14 +650,14 @@ CONVERSATION & RESPONSE RULES:
               onChange={e => setInputValue(e.target.value)}
               onPaste={handlePaste}
               placeholder="Ask anything, paste images (Ctrl+V), or attach Excel/PDF/CSV..."
-              className="flex-1 px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+              className="flex-1 px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             />
 
             {/* Send Button */}
             <button
               type="submit"
               disabled={(!inputValue.trim() && attachedFiles.length === 0) || isTyping}
-              className="p-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl shadow-md transition-colors shrink-0"
+              className="p-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl shadow-md transition-colors shrink-0"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />

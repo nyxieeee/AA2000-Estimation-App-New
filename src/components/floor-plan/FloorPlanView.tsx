@@ -332,7 +332,7 @@ export default function FloorPlanView({ projects, onAddToProjectEstimation, onSc
     <div className="flex flex-col h-full bg-white">
       <div className="flex flex-wrap items-center justify-between px-4 sm:px-6 py-3 min-h-16 shrink-0 border-b border-slate-200 gap-2">
         <div className="flex items-center gap-3">
-          <svg className="w-5 h-5 text-purple-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg className="w-5 h-5 text-blue-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498 4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 0 0-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0Z" />
           </svg>
           <div>
@@ -356,15 +356,15 @@ export default function FloorPlanView({ projects, onAddToProjectEstimation, onSc
               {/* Interactive Auto-Detect Toggle Switch */}
               <div
                 onClick={() => setAutoDetectMode(!autoDetectMode)}
-                className="flex items-center gap-2.5 bg-purple-50 px-3 py-1.5 rounded-xl border border-purple-200/80 cursor-pointer select-none hover:bg-purple-100/60 transition-colors"
+                className="flex items-center gap-2.5 bg-blue-50 px-3 py-1.5 rounded-xl border border-blue-200/80 cursor-pointer select-none hover:bg-blue-100/60 transition-colors"
               >
-                <span className="text-[11px] font-extrabold text-purple-900 flex items-center gap-1">
+                <span className="text-[11px] font-extrabold text-blue-900 flex items-center gap-1">
                   <span>⚡</span> Auto-Detect Systems &amp; Legends
                 </span>
                 <button
                   type="button"
                   className={`w-10 h-5 rounded-full transition-colors p-0.5 relative cursor-pointer ${
-                    autoDetectMode ? 'bg-purple-600' : 'bg-slate-300'
+                    autoDetectMode ? 'bg-blue-600' : 'bg-slate-300'
                   }`}
                 >
                   <div className={`w-4 h-4 rounded-full bg-white shadow-md transition-transform transform ${
@@ -376,7 +376,7 @@ export default function FloorPlanView({ projects, onAddToProjectEstimation, onSc
 
             <div className="p-4 space-y-4">
               {autoDetectMode ? (
-                <div className="px-3.5 py-2.5 rounded-xl bg-purple-50/80 border border-purple-100 flex items-center gap-2.5 text-xs text-purple-950 font-medium">
+                <div className="px-3.5 py-2.5 rounded-xl bg-blue-50/80 border border-blue-100 flex items-center gap-2.5 text-xs text-blue-950 font-medium">
                   <span className="text-base shrink-0">✨</span>
                   <span>
                     <strong>AI Auto-Detect Active:</strong> The AI will automatically scan all uploaded drawings, legends, plotted icons &amp; TOR specs. Click pills below if you want to switch to specific systems.
@@ -422,7 +422,7 @@ export default function FloorPlanView({ projects, onAddToProjectEstimation, onSc
                 <select
                   value={availableBrands.includes(selectedBrand) ? selectedBrand : 'Generalized / Any Brand'}
                   onChange={e => setSelectedBrand(e.target.value)}
-                  className="px-3 py-1.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-800 bg-white outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all min-w-[240px]"
+                  className="px-3 py-1.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-800 bg-white outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all min-w-[240px]"
                 >
                   {availableBrands.map(b => (
                     <option key={b} value={b}>{b}</option>
@@ -441,12 +441,12 @@ export default function FloorPlanView({ projects, onAddToProjectEstimation, onSc
               <div>
                 <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Project Name</label>
                 <input type="text" placeholder="e.g. UST Medical Tower" value={projectName} onChange={e => setProjectName(e.target.value)}
-                  className="w-full px-3 py-2 text-xs font-medium rounded-lg border border-slate-200 bg-white text-slate-700 outline-none focus:border-purple-400 transition-colors" />
+                  className="w-full px-3 py-2 text-xs font-medium rounded-lg border border-slate-200 bg-white text-slate-700 outline-none focus:border-blue-400 transition-colors" />
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Building Type</label>
                 <select value={buildingType} onChange={e => setBuildingType(e.target.value)}
-                  className="w-full px-3 py-2 text-xs font-medium rounded-lg border border-slate-200 bg-white text-slate-700 outline-none focus:border-purple-400 transition-colors">
+                  className="w-full px-3 py-2 text-xs font-medium rounded-lg border border-slate-200 bg-white text-slate-700 outline-none focus:border-blue-400 transition-colors">
                   <option value="">Select type...</option>
                   <option value="Office">Office Building</option>
                   <option value="Hospital / Medical">Hospital / Medical</option>
@@ -507,7 +507,7 @@ export default function FloorPlanView({ projects, onAddToProjectEstimation, onSc
               onDrop={e => { e.preventDefault(); setDragOverTor(false); handleFilesSelect(e.dataTransfer.files, true); }}
               onClick={() => torInputRef.current?.click()}
               className={`relative border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-all ${
-                dragOverTor ? 'border-purple-500 bg-purple-50/60' : 'border-slate-300 hover:border-purple-400 hover:bg-purple-50/30'
+                dragOverTor ? 'border-blue-500 bg-blue-50/60' : 'border-slate-300 hover:border-blue-400 hover:bg-blue-50/30'
               }`}
             >
               <input
@@ -518,7 +518,7 @@ export default function FloorPlanView({ projects, onAddToProjectEstimation, onSc
                 className="hidden"
                 onChange={e => { if (e.target.files?.length) { handleFilesSelect(e.target.files, true); e.target.value = ''; } }}
               />
-              <div className="w-10 h-10 mx-auto mb-2 rounded-xl bg-purple-100/80 text-purple-600 flex items-center justify-center">
+              <div className="w-10 h-10 mx-auto mb-2 rounded-xl bg-blue-100/80 text-blue-600 flex items-center justify-center">
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
                 </svg>
@@ -526,7 +526,7 @@ export default function FloorPlanView({ projects, onAddToProjectEstimation, onSc
               <h4 className="text-xs font-black text-slate-800 uppercase tracking-wide">TOR & Spec Documents</h4>
               <p className="text-[11px] text-slate-500 mt-0.5">Drop TOR PDFs, scope of work, spec sheets</p>
               <div className="mt-3">
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold text-purple-700 bg-purple-100/80 border border-purple-200">
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold text-blue-700 bg-blue-100/80 border border-blue-200">
                   📄 Terms of Reference (TOR)
                 </span>
               </div>
@@ -540,12 +540,12 @@ export default function FloorPlanView({ projects, onAddToProjectEstimation, onSc
                 <span className="text-[10px] text-slate-400">Click TOR button to mark a document as Terms of Reference</span>
               </div>
               {previews.map((fp, idx) => (
-                <div key={idx} className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all ${fp.isTor ? 'bg-purple-50 border-purple-200' : 'bg-white border-slate-200'}`}>
+                <div key={idx} className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all ${fp.isTor ? 'bg-blue-50 border-blue-200' : 'bg-white border-slate-200'}`}>
                   {fp.type === 'image' && fp.url ? (
                     <img src={fp.url} alt={fp.name} className="w-12 h-10 object-contain rounded-lg border border-slate-200 bg-slate-50 shrink-0" />
                   ) : (
-                    <div className={`w-12 h-10 rounded-lg border flex items-center justify-center shrink-0 ${fp.isTor ? 'bg-purple-100 border-purple-200' : 'bg-red-50 border-red-100'}`}>
-                      <svg className={`w-5 h-5 ${fp.isTor ? 'text-purple-500' : 'text-red-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <div className={`w-12 h-10 rounded-lg border flex items-center justify-center shrink-0 ${fp.isTor ? 'bg-blue-100 border-blue-200' : 'bg-red-50 border-red-100'}`}>
+                      <svg className={`w-5 h-5 ${fp.isTor ? 'text-blue-500' : 'text-red-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
                       </svg>
                     </div>
@@ -554,11 +554,11 @@ export default function FloorPlanView({ projects, onAddToProjectEstimation, onSc
                     <p className="text-xs font-bold text-slate-700 truncate">{fp.name}</p>
                     <div className="flex items-center gap-1.5 mt-0.5">
                       <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wide" style={fp.type === 'pdf' ? { background: '#FEF2F2', color: '#DC2626' } : { background: '#EFF6FF', color: '#2563EB' }}>{fp.type === 'pdf' ? 'PDF' : 'Image'}</span>
-                      {fp.isTor && <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wide bg-purple-100 text-purple-700">TOR / Spec</span>}
+                      {fp.isTor && <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wide bg-blue-100 text-blue-700">TOR / Spec</span>}
                     </div>
                   </div>
                   <button onClick={() => toggleTor(idx)}
-                    className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold uppercase tracking-wide transition-all border ${fp.isTor ? 'bg-purple-600 text-white border-purple-600' : 'bg-white text-purple-600 border-purple-200 hover:bg-purple-50'}`}>
+                    className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold uppercase tracking-wide transition-all border ${fp.isTor ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-blue-600 border-blue-200 hover:bg-blue-50'}`}>
                     TOR
                   </button>
                   <button onClick={() => removeFile(idx)} className="w-6 h-6 rounded-full bg-red-50 hover:bg-red-100 text-red-500 flex items-center justify-center text-xs font-black transition-colors shrink-0">&times;</button>
@@ -579,7 +579,7 @@ export default function FloorPlanView({ projects, onAddToProjectEstimation, onSc
 
               {!analyzing && selectedSystems.length > 0 && (
                 <button onClick={handleAnalyze} className="w-full mt-2 py-3.5 rounded-xl text-sm font-bold text-white transition-all"
-                  style={{ background: 'linear-gradient(135deg, #7C3AED, #6D28D9)', boxShadow: '0 4px 16px rgba(124,58,237,0.3)' }}>
+                  style={{ background: 'linear-gradient(135deg, #1E3A8A, #2563EB)', boxShadow: '0 4px 16px rgba(37,99,235,0.25)' }}>
                   <svg className="w-4 h-4 inline mr-2 -mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 0 0-2.455 2.456Z" />
                   </svg>
@@ -592,10 +592,10 @@ export default function FloorPlanView({ projects, onAddToProjectEstimation, onSc
               )}
 
               {analyzing && (
-                <div className="rounded-xl bg-purple-50 border border-purple-100 p-4 space-y-3">
+                <div className="rounded-xl bg-blue-50 border border-blue-100 p-4 space-y-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-5 h-5 border-2 border-purple-500 border-t-transparent rounded-full animate-spin shrink-0" />
-                    <span className="text-sm font-bold text-purple-800">AI is generating your BOQ estimation...</span>
+                    <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin shrink-0" />
+                    <span className="text-sm font-bold text-blue-900">AI is generating your BOQ estimation...</span>
                   </div>
                   <div className="space-y-1.5">
                     {ANALYSIS_STEPS.map((step, i) => (
@@ -603,11 +603,11 @@ export default function FloorPlanView({ projects, onAddToProjectEstimation, onSc
                         {i < analysisStep ? (
                           <svg className="w-3.5 h-3.5 text-emerald-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
                         ) : i === analysisStep ? (
-                          <div className="w-3.5 h-3.5 border-2 border-purple-400 border-t-transparent rounded-full animate-spin shrink-0" />
+                          <div className="w-3.5 h-3.5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin shrink-0" />
                         ) : (
                           <div className="w-3.5 h-3.5 rounded-full border border-slate-300 shrink-0" />
                         )}
-                        <span className={i === analysisStep ? 'font-bold text-purple-700' : i < analysisStep ? 'text-emerald-600 font-semibold' : 'text-slate-400'}>{step}</span>
+                        <span className={i === analysisStep ? 'font-bold text-blue-700' : i < analysisStep ? 'text-emerald-600 font-semibold' : 'text-slate-400'}>{step}</span>
                       </div>
                     ))}
                   </div>
@@ -628,21 +628,21 @@ export default function FloorPlanView({ projects, onAddToProjectEstimation, onSc
           {result && (
             <div className="space-y-4 animate-fade-in-up">
               {/* Summary */}
-              <div className="rounded-xl border border-purple-100 overflow-hidden">
-                <div className="px-4 py-3 bg-purple-50 border-b border-purple-100 flex items-center justify-between">
-                  <span className="text-xs font-bold text-purple-700 uppercase tracking-wider">AI Analysis Summary</span>
+              <div className="rounded-xl border border-blue-100 overflow-hidden">
+                <div className="px-4 py-3 bg-blue-50 border-b border-blue-100 flex items-center justify-between">
+                  <span className="text-xs font-bold text-blue-800 uppercase tracking-wider">AI Analysis Summary</span>
                   <div className="flex items-center gap-2.5">
                     <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md border"
                       style={{ color: confidenceColor, borderColor: confidenceColor + '40', background: confidenceColor + '12' }}>
                       {result.confidenceScore >= 76 ? 'High Confidence' : result.confidenceScore >= 51 ? 'Medium Confidence' : result.confidenceScore >= 26 ? 'Low Confidence' : 'Poor Quality'}
                     </span>
-                    <div className="w-24 h-2.5 rounded-full bg-purple-200 overflow-hidden">
+                    <div className="w-24 h-2.5 rounded-full bg-blue-200 overflow-hidden">
                       <div className="h-full rounded-full transition-all duration-700" style={{ width: `${result.confidenceScore}%`, background: confidenceColor }} />
                     </div>
                     <span className="text-xs font-black" style={{ color: confidenceColor }}>{result.confidenceScore}%</span>
                   </div>
                 </div>
-                <div className="p-4"><p className="text-sm font-semibold text-purple-800">{result.observations}</p></div>
+                <div className="p-4"><p className="text-sm font-semibold text-blue-900">{result.observations}</p></div>
               </div>
 
               {/* ── Labor & Services (Manpower Breakdown + Scope of Works) ── */}
@@ -904,10 +904,10 @@ export default function FloorPlanView({ projects, onAddToProjectEstimation, onSc
                 const grandTotal = totalManpower + totalMaterials + totalFees;
 
                 return (
-                  <div className="rounded-2xl border-2 border-purple-200 bg-gradient-to-br from-purple-50 via-white to-blue-50 p-5 shadow-sm space-y-3">
-                    <div className="flex items-center justify-between border-b border-purple-100 pb-3">
-                      <span className="text-xs font-black text-purple-900 uppercase tracking-wider">Overall BOQ Estimation Summary</span>
-                      <span className="text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-purple-600 text-white uppercase tracking-wider">Grand Total</span>
+                  <div className="rounded-2xl border-2 border-blue-200 bg-gradient-to-br from-blue-50/60 via-white to-slate-50 p-5 shadow-sm space-y-3">
+                    <div className="flex items-center justify-between border-b border-blue-100 pb-3">
+                      <span className="text-xs font-black text-blue-950 uppercase tracking-wider">Overall BOQ Estimation Summary</span>
+                      <span className="text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-blue-600 text-white uppercase tracking-wider">Grand Total</span>
                     </div>
                     <div className="grid grid-cols-3 gap-3 text-xs">
                       <div className="p-3 rounded-xl bg-white border border-slate-100 shadow-2xs">
@@ -923,9 +923,9 @@ export default function FloorPlanView({ projects, onAddToProjectEstimation, onSc
                         <p className="text-sm font-black text-slate-700 mt-0.5">&#8369;{totalFees.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</p>
                       </div>
                     </div>
-                    <div className="flex items-center justify-between pt-2 border-t border-purple-100">
+                    <div className="flex items-center justify-between pt-2 border-t border-blue-100">
                       <span className="text-sm font-extrabold text-slate-800">Grand Total BOQ Estimation:</span>
-                      <span className="text-xl font-black text-purple-700">&#8369;{grandTotal.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</span>
+                      <span className="text-xl font-black text-blue-700">&#8369;{grandTotal.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</span>
                     </div>
                   </div>
                 );

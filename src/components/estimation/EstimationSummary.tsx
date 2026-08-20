@@ -6,7 +6,7 @@ import { analyzeFloorPlan, type FloorPlanEstimation } from '../../services/gemin
 import { parseFile } from '../../services/fileParser';
 import { systemBadgeIcons, Users, StatCalendar, Package as PackageIcon, Plug, Map as MapIcon, ExclamationTriangle, Plus, Document, User as UserIcon, MagnifyingGlass, ArrowRight, Check } from '../../utils/Icons';
 import { useToast } from '../utils/Toast';
-import { getEstimatedItemPricing } from '../../services/pricelistService';
+import { getEstimatedItemPricing, searchPricelist } from '../../services/pricelistService';
 import QuotationModal, { type QuotationHeaderState, type ScopeOfWorkEntry, generateSystemScopeOfWorks } from './QuotationModal';
 
 function mapCategoryToOption(cat: string): string {
@@ -238,6 +238,11 @@ export default function EstimationSummary({ project, user, onBack, onUpdateStatu
   const [fees, setFees] = useState<EstimationAdditionalFeeEntry[]>([]);
   const [scopeOfWorks, setScopeOfWorks] = useState<ScopeOfWorkEntry[]>([]);
   const [constraints, setConstraints] = useState({ physical: '', electrical: '', installation: '' });
+
+  // ── AI Baseline & Technician Ground Validation Tracking ───────────────────
+  const [aiBaseline, setAiBaseline] = useState<any>(null);
+  const [technicianNotes, setTechnicianNotes] = useState<string>('');
+  const [discrepancyJustifications, setDiscrepancyJustifications] = useState<string[]>([]);
 
   // ── AI-generated full quotation structure ─────────────────────────────────
   const [aiQuotation, setAiQuotation] = useState<FloorPlanEstimation | null>(null);
@@ -505,9 +510,35 @@ export default function EstimationSummary({ project, user, onBack, onUpdateStatu
       return `${resTerm} ${type}`;
     };
 
-    // Estimate realistic prices per category/type so tables are never blank
+    // Priority lookup from official pricelistData.json catalog
     const matchDbProduct = (searchName: string, defaultName: string, defaultCategory: string, defaultUnit: string, quantity: number, preferredBrand?: string) => {
       const brand = preferredBrand || detectBrandFromName(searchName) || (project.systemTypes?.[0] === 'FIRE_ALARM' ? 'Asenware' : 'Hikvision');
+      
+      // 1. Direct search in official AA2000 pricelistData.json
+      const matches = searchPricelist(searchName, { brand: preferredBrand, maxResults: 1 });
+      if (matches && matches.length > 0) {
+        const item = matches[0];
+        const srp = item.price || 3500;
+        const contractorPrice = item.contractorPrice || Math.round(srp * 0.85);
+        const dealerPrice = item.dealerPrice || Math.round(srp * 0.75);
+        const unitPrice = srp;
+
+        return {
+          id: crypto.randomUUID(),
+          name: `${item.brand} ${item.model || defaultName} (${item.description || defaultName})`,
+          brand: item.brand,
+          category: defaultCategory,
+          quantity,
+          unit: defaultUnit,
+          unitPrice,
+          srp,
+          contractorPrice,
+          dealerPrice,
+          totalPrice: unitPrice * quantity,
+        };
+      }
+
+      // 2. Fallback pricing if unlisted
       let srp = 3500;
       const lower = searchName.toLowerCase();
       if (lower.includes('facp') || lower.includes('fire alarm control') || lower.includes('control panel')) srp = 145000;
@@ -724,10 +755,22 @@ export default function EstimationSummary({ project, user, onBack, onUpdateStatu
         if (parsed.scopeOfWorks) setScopeOfWorks(parsed.scopeOfWorks);
         if (parsed.constraints) setConstraints(parsed.constraints);
         if (parsed.priceTier) setPriceTier(parsed.priceTier);
+        if (parsed.aiBaseline) setAiBaseline(parsed.aiBaseline);
+        if (parsed.technicianNotes) setTechnicianNotes(parsed.technicianNotes);
+        if (parsed.discrepancyJustifications) setDiscrepancyJustifications(parsed.discrepancyJustifications);
         return;
       } catch (e) {
         console.error('Failed to parse saved estimation', e);
       }
+    }
+
+    // Check if a dedicated AI baseline was saved earlier
+    const baselineRaw = localStorage.getItem(`aa2000_ai_baseline_${project.id}`);
+    if (baselineRaw) {
+      try {
+        const parsedBaseline = JSON.parse(baselineRaw);
+        setAiBaseline(parsedBaseline);
+      } catch (e) {}
     }
 
     if (manpower.length === 0 && consumables.length === 0) {
@@ -939,6 +982,19 @@ export default function EstimationSummary({ project, user, onBack, onUpdateStatu
       }
       // Store full AI-generated quotation structure for the modal
       setAiQuotation(result);
+
+      // Save baseline object for AI-vs-Tech ground validation tracking
+      const baselineObj = {
+        manpower: result.manpower.map(m => ({ ...m })),
+        consumables: result.consumables.map(c => ({ ...c })),
+        fees: result.fees.map(f => ({ ...f })),
+        constraints: result.constraints,
+        observations: result.observations,
+        confidenceScore: result.confidenceScore,
+        generatedAt: new Date().toISOString(),
+      };
+      setAiBaseline(baselineObj);
+      localStorage.setItem(`aa2000_ai_baseline_${project.id}`, JSON.stringify(baselineObj));
 
       setTimeout(() => setIsAiEstimating(false), 500);
     } catch (err: unknown) {
@@ -1349,7 +1405,7 @@ export default function EstimationSummary({ project, user, onBack, onUpdateStatu
             <button
               onClick={runAiEstimation}
               className="px-4 py-2.5 rounded-full text-xs font-bold text-white flex items-center gap-2 shadow-sm transition-all hover:opacity-95"
-              style={{ background: hasFiles ? '#7C3AED' : '#1E3A8A' }}
+              style={{ background: 'linear-gradient(135deg, #1E3A8A 0%, #2563EB 100%)' }}
             >
               <svg className="w-3.5 h-3.5 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 0 0-2.455 2.456Z" />
@@ -1454,26 +1510,96 @@ CCTV:                { bg: '#EFF6FF', color: '#1E3A8A', label: 'CCTV System',   
           </div>
         )}
 
+        {/* ── AI Baseline vs. Field Validated Variance Tracker ── */}
+        {aiBaseline && (
+          <div className="rounded-2xl p-5 mb-5 border border-indigo-100 bg-gradient-to-r from-indigo-50/70 via-blue-50/50 to-white shadow-xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3 pb-3 border-b border-indigo-100/70">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-xl bg-indigo-600 text-white flex items-center justify-center text-xs font-bold shadow-xs">
+                  🤖
+                </div>
+                <div>
+                  <h3 className="text-xs font-black text-slate-800 uppercase tracking-wide">
+                    AI Pre-Estimate vs. Ground-Validated Variance
+                  </h3>
+                  <p className="text-[10px] text-slate-500 font-medium">
+                    AI recommendation is baseline · Field technician and sales can adjust all counts, materials, and pricing
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5 self-start sm:self-auto">
+                <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  Editable Ground Overrides Active
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+              <div className="p-3 rounded-xl bg-white border border-slate-200/80 shadow-2xs">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Headcount (Actual vs AI)</p>
+                <div className="flex items-baseline gap-2 mt-1">
+                  <span className="text-sm font-black text-slate-800">{totalHeadcount} pax</span>
+                  <span className="text-[10px] text-slate-400 font-medium line-through">
+                    {aiBaseline.manpower?.reduce((acc: number, m: any) => acc + (Number(m.headcount) || 0), 0) || 0} pax
+                  </span>
+                </div>
+              </div>
+
+              <div className="p-3 rounded-xl bg-white border border-slate-200/80 shadow-2xs">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Man-Days (Actual vs AI)</p>
+                <div className="flex items-baseline gap-2 mt-1">
+                  <span className="text-sm font-black text-slate-800">{totalManDays} days</span>
+                  <span className="text-[10px] text-slate-400 font-medium line-through">
+                    {aiBaseline.manpower?.reduce((acc: number, m: any) => acc + (Number(m.manDays) || 0), 0) || 0} days
+                  </span>
+                </div>
+              </div>
+
+              <div className="p-3 rounded-xl bg-white border border-slate-200/80 shadow-2xs">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Material Items (Actual vs AI)</p>
+                <div className="flex items-baseline gap-2 mt-1">
+                  <span className="text-sm font-black text-slate-800">{totalMaterialLines} lines</span>
+                  <span className="text-[10px] text-slate-400 font-medium line-through">
+                    {aiBaseline.consumables?.length || 0} lines
+                  </span>
+                </div>
+              </div>
+
+              <div className="p-3 rounded-xl bg-white border border-slate-200/80 shadow-2xs">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Ground Justification</p>
+                <div className="mt-1 truncate">
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                    discrepancyJustifications.length > 0 ? 'bg-blue-100 text-blue-800' : 'bg-slate-100 text-slate-600'
+                  }`}>
+                    {discrepancyJustifications.length > 0 ? `${discrepancyJustifications.length} field reason(s) noted` : 'No ground changes'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* ── Floor Plan Upload Section ── */}
-        <div style={{ ...sectionCard, border: hasFiles ? '1px solid #6D28D9' : '1px solid #E2E8F0', background: hasFiles ? '#FAFAFE' : '#FFFFFF' }}>
+        <div style={{ ...sectionCard, border: hasFiles ? '1px solid #2563EB' : '1px solid #E2E8F0', background: hasFiles ? '#F8FAFC' : '#FFFFFF' }}>
           <div className="flex items-center gap-2 mb-4">
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center text-sm" style={{ background: '#F5F3FF', color: '#7C3AED' }}>
+            <div className="w-7 h-7 rounded-lg flex items-center justify-center text-sm" style={{ background: '#EFF6FF', color: '#2563EB' }}>
               <MapIcon className="w-5 h-5" />
             </div>
             <h2 className="text-sm font-black text-slate-800 uppercase tracking-tight">Floor Plan Upload</h2>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-50 text-purple-600 border border-purple-100">
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-100">
               Powers AI Analysis
             </span>
           </div>
 
           {/* AI Observations & Confidence */}
           {aiObservations && (
-            <div className="mb-4 px-4 py-3 rounded-xl bg-purple-50 border border-purple-100">
+            <div className="mb-4 px-4 py-3 rounded-xl bg-blue-50 border border-blue-100">
               <div className="flex items-center justify-between mb-1">
-                <p className="text-[9px] font-bold uppercase tracking-wider text-purple-400">AI Floor Plan Observations</p>
+                <p className="text-[9px] font-bold uppercase tracking-wider text-blue-400">AI Floor Plan Observations</p>
                 {aiConfidence !== null && (
                   <div className="flex items-center gap-2">
-                    <div className="w-20 h-2 rounded-full bg-purple-200 overflow-hidden">
+                    <div className="w-20 h-2 rounded-full bg-blue-200 overflow-hidden">
                       <div
                         className="h-full rounded-full transition-all duration-700"
                         style={{
@@ -1493,7 +1619,7 @@ CCTV:                { bg: '#EFF6FF', color: '#1E3A8A', label: 'CCTV System',   
                   </div>
                 )}
               </div>
-              <p className="text-xs font-semibold text-purple-800">{aiObservations}</p>
+              <p className="text-xs font-semibold text-blue-800">{aiObservations}</p>
             </div>
           )}
 
@@ -1513,7 +1639,7 @@ CCTV:                { bg: '#EFF6FF', color: '#1E3A8A', label: 'CCTV System',   
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
             {/* Floor Plan Drawings Dropzone & List */}
             <div>
-              <span className="text-[10px] font-black text-purple-600 uppercase tracking-wider mb-2 block">Floor Plan Drawings</span>
+              <span className="text-[10px] font-black text-blue-600 uppercase tracking-wider mb-2 block">Floor Plan Drawings</span>
               <div
                 onClick={() => fileInputRef.current?.click()}
                 onDragOver={e => { e.preventDefault(); setIsDragOver(true); }}
@@ -1526,8 +1652,8 @@ CCTV:                { bg: '#EFF6FF', color: '#1E3A8A', label: 'CCTV System',   
                 }}
                 className="border-2 border-dashed rounded-2xl flex flex-col items-center justify-center py-8 cursor-pointer transition-all"
                 style={{
-                  borderColor: isDragOver ? '#7C3AED' : hasFiles ? '#A78BFA' : '#E2E8F0',
-                  background: isDragOver ? '#F5F3FF' : hasFiles ? '#FAFAFE' : '#F8FAFC',
+                  borderColor: isDragOver ? '#2563EB' : hasFiles ? '#93C5FD' : '#E2E8F0',
+                  background: isDragOver ? '#EFF6FF' : hasFiles ? '#F8FAFC' : '#F8FAFC',
                 }}
               >
                 {hasFiles ? <Plus className="w-8 h-8 text-slate-300 mb-3" /> : <MapIcon className="w-8 h-8 text-slate-300 mb-3" />}
@@ -1542,7 +1668,7 @@ CCTV:                { bg: '#EFF6FF', color: '#1E3A8A', label: 'CCTV System',   
                   {floorPlanPreviews.map((fp, idx) => (
                     <div
                       key={idx}
-                      className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-white border border-purple-100"
+                      className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-white border border-blue-100"
                     >
                       {fp.url ? (
                         <img src={fp.url} alt={fp.name} className="w-10 h-8 object-contain rounded border border-slate-200 bg-slate-50 shrink-0" />
@@ -1893,10 +2019,10 @@ CCTV:                { bg: '#EFF6FF', color: '#1E3A8A', label: 'CCTV System',   
           const grandTotal = totalLabor + totalMaterials + totalFees;
 
           return (
-            <div className="rounded-2xl border-2 border-purple-200 bg-gradient-to-br from-purple-50 via-white to-blue-50 p-5 shadow-sm space-y-3 mb-5">
-              <div className="flex items-center justify-between border-b border-purple-100 pb-3">
-                <span className="text-xs font-black text-purple-900 uppercase tracking-wider">OVERALL BOQ ESTIMATION SUMMARY</span>
-                <span className="text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-purple-600 text-white uppercase tracking-wider">Grand Total</span>
+            <div className="rounded-2xl border-2 border-blue-200 bg-gradient-to-br from-blue-50/60 via-white to-slate-50 p-5 shadow-sm space-y-3 mb-5">
+              <div className="flex items-center justify-between border-b border-blue-100 pb-3">
+                <span className="text-xs font-black text-blue-950 uppercase tracking-wider">OVERALL BOQ ESTIMATION SUMMARY</span>
+                <span className="text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-blue-600 text-white uppercase tracking-wider">Grand Total</span>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
                 <div className="p-3.5 rounded-xl bg-white border border-slate-100 shadow-2xs">
@@ -1912,9 +2038,9 @@ CCTV:                { bg: '#EFF6FF', color: '#1E3A8A', label: 'CCTV System',   
                   <p className="text-base font-black text-slate-700 mt-0.5">₱{totalFees.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</p>
                 </div>
               </div>
-              <div className="flex items-center justify-between pt-3 border-t border-purple-100">
+              <div className="flex items-center justify-between pt-3 border-t border-blue-100">
                 <span className="text-sm font-extrabold text-slate-800">Grand Total BOQ Estimation:</span>
-                <span className="text-2xl font-black text-purple-700">₱{grandTotal.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</span>
+                <span className="text-2xl font-black text-blue-700">₱{grandTotal.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</span>
               </div>
             </div>
           );
@@ -2008,11 +2134,77 @@ CCTV:                { bg: '#EFF6FF', color: '#1E3A8A', label: 'CCTV System',   
           </div>
         </div>
 
+        {/* ── Technician Ground Notes & Discrepancy Justification ── */}
+        <div style={sectionCard}>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-blue-50 text-blue-600">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+              </div>
+              <div>
+                <h2 className="text-xs font-black text-slate-800 uppercase tracking-wider">
+                  TECHNICIAN FIELD NOTES &amp; GROUND OVERRIDE REASONS
+                </h2>
+                <p className="text-[10px] text-slate-400 font-medium">
+                  Document any physical site changes or reasons why counts/manpower differ from AI recommendation for Sales &amp; Admin review
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick preset chips */}
+          <div className="mb-3">
+            <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">Quick Ground Tags / Justifications:</p>
+            <div className="flex flex-wrap gap-2">
+              {[
+                'High ceiling (>3.5m) - Scaffolding/Lift needed',
+                'Thick concrete walls - Heavy coring required',
+                'Blind spot identified - Extra device(s) added',
+                'Long cable pathway (>80m) - Extended routing',
+                'Power source distant - Dedicated breaker requested',
+                'Client requested additional scope during site visit',
+                'Existing conduits obstructed - Re-piping needed',
+              ].map(tag => {
+                const isSelected = discrepancyJustifications.includes(tag);
+                return (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => {
+                      setDiscrepancyJustifications(prev =>
+                        isSelected ? prev.filter(t => t !== tag) : [...prev, tag]
+                      );
+                    }}
+                    className={`px-3 py-1 rounded-full text-[11px] font-bold border transition-all cursor-pointer ${
+                      isSelected
+                        ? 'bg-blue-600 border-blue-600 text-white shadow-xs'
+                        : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100 hover:border-slate-300'
+                    }`}
+                  >
+                    {isSelected ? '✓ ' : '+ '}{tag}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <textarea
+            value={technicianNotes}
+            onChange={e => setTechnicianNotes(e.target.value)}
+            rows={3}
+            placeholder="Type additional technician observations, site inspection remarks, or specific agreements made with the client on site..."
+            className="w-full rounded-xl text-xs outline-none focus:border-[#1E3A8A] leading-relaxed text-slate-700 bg-white"
+            style={{ ...inputStyle, padding: '12px' }}
+          />
+        </div>
+
         {/* ── Installation Notes & Constraints (Matches Reference Screenshot) ── */}
         <div style={sectionCard}>
           <div className="flex items-center gap-2 mb-4">
             <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-emerald-50 text-emerald-600">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <circle cx="12" cy="12" r="10" />
                 <path strokeLinecap="round" d="M12 16v-4M12 8h.01" />
               </svg>
@@ -2067,12 +2259,17 @@ CCTV:                { bg: '#EFF6FF', color: '#1E3A8A', label: 'CCTV System',   
                   constraints,
                   priceTier,
                   aiQuotation,
+                  aiBaseline,
+                  technicianNotes,
+                  discrepancyJustifications,
+                  updatedAt: new Date().toISOString(),
                 };
                 localStorage.setItem(`aa2000_estimation_${project.id}`, JSON.stringify(estimationData));
                 if (onUpdateStatus) {
-                  onUpdateStatus(project.id, 'Completed');
+                  // Set to 'Finalized' (Awaiting Approval) — admin or sales must manually approve
+                  onUpdateStatus(project.id, 'Finalized');
                 }
-                toast.success('Estimation details successfully saved into localized system record.');
+                toast.success('Estimation saved. The project is now awaiting approval from Admin or Sales.');
                 onBack();
               }}
               className="px-8 py-3 rounded-xl text-xs font-bold text-white transition-all shadow-sm hover:opacity-95"
@@ -2108,18 +2305,17 @@ CCTV:                { bg: '#EFF6FF', color: '#1E3A8A', label: 'CCTV System',   
       {isAiEstimating && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           <div className="w-full max-w-md bg-white rounded-3xl border border-slate-200 shadow-2xl p-6 text-center overflow-hidden relative">
-            <div className="absolute -top-12 -left-12 w-32 h-32 rounded-full blur-2xl opacity-40 animate-pulse" style={{ background: hasFiles ? '#7C3AED' : '#1E3A8A' }}></div>
-            <div className="absolute -bottom-12 -right-12 w-32 h-32 rounded-full blur-2xl opacity-30 animate-pulse" style={{ background: hasFiles ? '#A78BFA' : '#3B82F6' }}></div>
+            <div className="absolute -top-12 -left-12 w-32 h-32 rounded-full blur-2xl opacity-40 animate-pulse" style={{ background: '#2563EB' }}></div>
+            <div className="absolute -bottom-12 -right-12 w-32 h-32 rounded-full blur-2xl opacity-30 animate-pulse" style={{ background: '#3B82F6' }}></div>
 
             <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 bg-slate-50 border border-slate-200 relative z-10">
-              <svg className="w-8 h-8 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}
-                style={{ color: hasFiles ? '#7C3AED' : '#1E3A8A' }}>
+              <svg className="w-8 h-8 animate-pulse text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 0 0-2.455 2.456Z" />
               </svg>
             </div>
 
             <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider relative z-10">AA2000 CONNECT</h3>
-            <p className="text-[10px] font-bold uppercase tracking-widest mt-0.5 relative z-10" style={{ color: hasFiles ? '#7C3AED' : '#1E3A8A' }}>
+            <p className="text-[10px] font-bold uppercase tracking-widest mt-0.5 relative z-10 text-blue-600">
               {hasFiles ? 'Mistral Vision Floor Plan Analysis' : 'AI Neural Estimation Scan'}
             </p>
 
@@ -2139,7 +2335,7 @@ CCTV:                { bg: '#EFF6FF', color: '#1E3A8A', label: 'CCTV System',   
                 {hasFiles && (
                   <div className="mt-3 relative z-10 flex flex-wrap gap-1.5 justify-center">
                     {floorPlanPreviews.map((fp, idx) => (
-                      <span key={idx} className="text-[9px] font-bold px-2.5 py-1 rounded-full bg-purple-50 text-purple-600 border border-purple-100">
+                      <span key={idx} className="text-[9px] font-bold px-2.5 py-1 rounded-full bg-blue-50 text-blue-600 border border-blue-100">
                         {fp.type === 'pdf' ? <Document className="w-4 h-4" /> : <MagnifyingGlass className="w-4 h-4" />} {fp.name.length > 20 ? fp.name.slice(0, 18) + '…' : fp.name}
                       </span>
                     ))}
@@ -2156,7 +2352,7 @@ CCTV:                { bg: '#EFF6FF', color: '#1E3A8A', label: 'CCTV System',   
                           {isDone ? (
                             <Check className="w-3 h-3 text-emerald-500" />
                           ) : isCurrent ? (
-                            <span className="h-2 w-2 rounded-full animate-ping" style={{ background: hasFiles ? '#7C3AED' : '#1E3A8A' }} />
+                            <span className="h-2 w-2 rounded-full animate-ping bg-blue-600" />
                           ) : (
                             <span className="h-2 w-2 rounded-full bg-slate-200" />
                           )}
@@ -2171,10 +2367,9 @@ CCTV:                { bg: '#EFF6FF', color: '#1E3A8A', label: 'CCTV System',   
 
                 <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden relative z-10">
                   <div
-                    className="h-full rounded-full transition-all duration-300"
+                    className="h-full rounded-full transition-all duration-300 bg-blue-600"
                     style={{
                       width: `${(aiStep / AI_STEPS.length) * 100}%`,
-                      background: hasFiles ? '#7C3AED' : '#1E3A8A',
                     }}
                   />
                 </div>

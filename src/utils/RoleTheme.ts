@@ -100,23 +100,23 @@ const SALES_THEME: RoleTheme = {
 
 const ADMIN_THEME: RoleTheme = {
   role: 'ADMIN',
-  primary: '#4F46E5',
-  primaryDark: '#4338CA',
-  primaryLight: '#6366F1',
-  secondary: '#6366F1',
-  accent: '#8B5CF6',
-  heroGradient: 'linear-gradient(135deg, #1E1B4B 0%, #3730A3 45%, #4F46E5 100%)',
-  sidebarGradient: 'linear-gradient(180deg, #EEF2FF 0%, #E0E7FF 100%)',
-  buttonGradient: 'linear-gradient(135deg, #4F46E5 0%, #4338CA 100%)',
-  primaryAlpha08: 'rgba(79,70,229,0.08)',
-  primaryAlpha12: 'rgba(79,70,229,0.12)',
-  primaryAlpha20: 'rgba(79,70,229,0.20)',
-  primaryAlpha30: 'rgba(79,70,229,0.30)',
+  primary: '#2563EB',
+  primaryDark: '#1D4ED8',
+  primaryLight: '#3B82F6',
+  secondary: '#0284C7',
+  accent: '#38BDF8',
+  heroGradient: 'linear-gradient(135deg, #0F172A 0%, #1E3A8A 45%, #2563EB 100%)',
+  sidebarGradient: 'linear-gradient(180deg, #EFF6FF 0%, #DBEAFE 100%)',
+  buttonGradient: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)',
+  primaryAlpha08: 'rgba(37,99,235,0.08)',
+  primaryAlpha12: 'rgba(37,99,235,0.12)',
+  primaryAlpha20: 'rgba(37,99,235,0.20)',
+  primaryAlpha30: 'rgba(37,99,235,0.30)',
   onPrimary: '#FFFFFF',
-  badgeBg: 'rgba(79,70,229,0.10)',
-  badgeText: '#4338CA',
-  sidebarBg: '#EEF2FF',
-  sidebarBorder: '#E0E7FF',
+  badgeBg: 'rgba(37,99,235,0.10)',
+  badgeText: '#1D4ED8',
+  sidebarBg: '#EFF6FF',
+  sidebarBorder: '#DBEAFE',
   roleLabel: 'System Administrator',
   roleEmoji: '',
   heroSubtitle:
@@ -130,14 +130,29 @@ const ADMIN_THEME: RoleTheme = {
 };
 
 
-export function getRoleTheme(role?: string): RoleTheme {
+export function getRoleTheme(role?: string, isDark?: boolean): RoleTheme {
+  let baseTheme: RoleTheme;
   switch (role) {
     case 'SALES':
-      return SALES_THEME;
+      baseTheme = SALES_THEME;
+      break;
     case 'ADMIN':
-      return ADMIN_THEME;
+      baseTheme = ADMIN_THEME;
+      break;
     case 'TECHNICIAN':
     default:
-      return TECHNICIAN_THEME;
+      baseTheme = TECHNICIAN_THEME;
+      break;
   }
+
+  if (isDark) {
+    return {
+      ...baseTheme,
+      sidebarBg: '#0D1527',
+      sidebarBorder: '#1E293B',
+      sidebarGradient: 'linear-gradient(180deg, #0D1527 0%, #131B2E 100%)',
+    };
+  }
+
+  return baseTheme;
 }

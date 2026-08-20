@@ -203,39 +203,44 @@ export default function ProjectDetail({ user, project, onBack, onStartSurvey, on
       </header>
 
       <main className="max-w-7xl mx-auto px-6 py-8">
-        {/* Admin Approval Banner */}
-        {user.role === 'ADMIN' && project.status === 'Finalized' && (
-          <div className="bg-white border border-slate-200 rounded-3xl p-6 mb-8 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
+        {/* Management / Sales Approval Banner */}
+        {(user.role === 'ADMIN' || user.role === 'SALES' || user.role === 'MANAGER') && project.status === 'Finalized' && (
+          <div className="bg-white border border-slate-200 rounded-3xl p-6 mb-8 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm animate-fade-in-up">
             <div>
-              <h3 className="text-xs font-black text-slate-800 uppercase tracking-wide">Awaiting Admin Review</h3>
-              <p className="text-[11px] leading-relaxed text-slate-400 font-semibold mt-0.5">Please check the completed survey report and approve or reject this submission.</p>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                <h3 className="text-xs font-black text-slate-800 uppercase tracking-wide">Awaiting Management / Sales Approval</h3>
+              </div>
+              <p className="text-[11px] leading-relaxed text-slate-400 font-semibold">
+                Please review the technician's ground-validated survey and cost estimation, then approve or request adjustments.
+              </p>
             </div>
             <div className="flex gap-2 w-full sm:w-auto shrink-0">
               <button
                 onClick={() => onUpdateStatus(project.id, 'Finalized - Rejected')}
                 className="flex-1 sm:flex-none px-5 py-2.5 rounded-xl font-bold text-xs text-red-600 bg-red-50 hover:bg-red-100 transition-all cursor-pointer"
               >
-                Reject Survey
+                Reject / Request Edit
               </button>
               <button
                 onClick={() => onUpdateStatus(project.id, 'Finalized - Approved')}
                 className="flex-1 sm:flex-none px-5 py-2.5 rounded-xl font-bold text-xs text-white bg-emerald-600 hover:bg-emerald-700 transition-all shadow-sm shadow-emerald-100 cursor-pointer"
               >
-                Approve Survey
+                Approve Project
               </button>
             </div>
           </div>
         )}
 
         {/* Reopen banner — for approved/rejected surveys that need to be accessed/edited again */}
-        {user.role === 'ADMIN' && (project.status === 'Finalized - Approved' || project.status === 'Finalized - Rejected') && (
+        {(user.role === 'ADMIN' || user.role === 'SALES' || user.role === 'MANAGER') && (project.status === 'Finalized - Approved' || project.status === 'Finalized - Rejected') && (
           <div className="bg-white border border-slate-200 rounded-3xl p-6 mb-8 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
             <div>
               <h3 className="text-xs font-black text-slate-800 uppercase tracking-wide">
-                {project.status === 'Finalized - Approved' ? 'Survey Approved & Locked' : 'Survey Rejected'}
+                {project.status === 'Finalized - Approved' ? 'Project Survey Approved & Locked' : 'Project Survey Rejected'}
               </h3>
               <p className="text-[11px] leading-relaxed text-slate-400 font-semibold mt-0.5">
-                Reopen this survey to review, edit, or re-finalize it.
+                Reopen this project to allow further adjustments by the technician, sales, or management.
               </p>
             </div>
             <button
@@ -410,7 +415,11 @@ export default function ProjectDetail({ user, project, onBack, onStartSurvey, on
             {/* Connecting lines */}
             <div className="absolute top-[20px] left-8 right-8 h-1 bg-slate-100 z-0 rounded-full" />
             <div 
-              className="absolute top-[20px] left-8 h-1 bg-blue-600 z-0 transition-all duration-700 rounded-full" 
+              className={`absolute top-[20px] left-8 h-1 z-0 transition-all duration-700 rounded-full ${
+                project.status === 'Completed' || project.status === 'Finalized - Approved'
+                  ? 'bg-emerald-500'
+                  : 'bg-blue-600'
+              }`} 
               style={{ 
                 width: `${
                   (project.status === 'Pending' || project.status === 'In Progress' || project.status === 'Finalized - Rejected'
@@ -432,19 +441,20 @@ export default function ProjectDetail({ user, project, onBack, onStartSurvey, on
                   project.status === 'Pending' || project.status === 'In Progress' || project.status === 'Finalized - Rejected' ? 0 :
                   project.status === 'Finalized' ? 1 : 2;
 
-                const isCompleted = idx < currentStageIndex;
-                const isActive = idx === currentStageIndex;
+                const isApprovedState = currentStageIndex === 2;
+                const isCompleted = idx < currentStageIndex || (idx === 2 && isApprovedState);
+                const isActive = idx === currentStageIndex && !isApprovedState;
                 
                 return (
                   <div key={step.label} className="flex flex-col items-center text-center flex-1">
                     <div 
                       className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-black transition-all duration-500 border-2 ${
-                        isCompleted ? 'bg-emerald-500 border-emerald-500 text-white shadow-md' :
+                        isCompleted ? 'bg-emerald-500 border-emerald-500 text-white shadow-md shadow-emerald-100' :
                         isActive ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-100 scale-110' :
                         'bg-white border-slate-200 text-slate-400'
                       }`}
                     >
-                      {isCompleted ? <Check className="w-4 h-4" /> : step.label === 'Survey In Progress' ? <StatBolt className="w-4 h-4" /> : step.label === 'Awaiting Approval' ? <StatClipboard className="w-4 h-4" /> : step.label === 'Approved' ? <Check className="w-4 h-4" /> : null}
+                      {isCompleted ? <Check className="w-4 h-4" /> : step.label === 'Survey In Progress' ? <StatBolt className="w-4 h-4" /> : step.label === 'Awaiting Approval' ? <StatClipboard className="w-4 h-4" /> : <Check className="w-4 h-4" />}
                     </div>
                     <p className={`text-[11px] font-black mt-3 transition-colors duration-300 uppercase tracking-tight ${
                       isCompleted ? 'text-emerald-600' : isActive ? 'text-blue-600' : 'text-slate-500'

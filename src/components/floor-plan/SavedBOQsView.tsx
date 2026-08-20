@@ -61,8 +61,8 @@ export default function SavedBOQsView() {
   if (boqs.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-full py-24 text-center px-8">
-        <div className="w-16 h-16 rounded-2xl bg-purple-50 border border-purple-100 flex items-center justify-center mb-4">
-          <svg className="w-8 h-8 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <div className="w-16 h-16 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center mb-4">
+          <svg className="w-8 h-8 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498 4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 0 0-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0Z" />
           </svg>
         </div>
@@ -164,9 +164,9 @@ export default function SavedBOQsView() {
             {isOpen && (
               <div className="border-t border-slate-100 px-5 pb-5 pt-4 space-y-4 bg-slate-50/50">
                 {/* Observations */}
-                <div className="rounded-xl bg-purple-50 border border-purple-100 px-4 py-3">
-                  <p className="text-[10px] font-bold text-purple-500 uppercase tracking-wider mb-1">AI Summary</p>
-                  <p className="text-xs text-purple-800 leading-relaxed">{boq.result.observations}</p>
+                <div className="rounded-xl bg-blue-50 border border-blue-100 px-4 py-3">
+                  <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wider mb-1">AI Summary</p>
+                  <p className="text-xs text-blue-900 leading-relaxed">{boq.result.observations}</p>
                 </div>
 
                 {/* Confidence bar */}

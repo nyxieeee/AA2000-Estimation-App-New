@@ -18,6 +18,7 @@
 
     <style>
       @import "tailwindcss";
+      @custom-variant dark (&:where(.dark, .dark *));
 
       /* ─── Reset & Box Model ─── */
       *, *::before, *::after { box-sizing: border-box; }
@@ -43,10 +44,11 @@
         --shadow-xs: 0 1px 2px rgba(0,0,0,0.04);
         --shadow-sm: 0 1px 4px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.04);
         --shadow-md: 0 4px 12px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.05);
-        --shadow-lg: 0 8px 24px rgba(0,0,0,0.10), 0 2px 6px rgba(0,0,0,0.05);
-        --shadow-xl: 0 16px 40px rgba(0,0,0,0.12), 0 4px 12px rgba(0,0,0,0.06);
+        --shadow-lg: 0 10px 24px rgba(0,0,0,0.10), 0 2px 6px rgba(0,0,0,0.04);
+        --shadow-xl: 0 20px 40px rgba(0,0,0,0.14), 0 4px 12px rgba(0,0,0,0.06);
 
         /* Border Radius Scale */
+        --radius-xs:  4px;
         --radius-sm:  6px;
         --radius-md:  10px;
         --radius-lg:  16px;
@@ -78,15 +80,16 @@
         /* Text tokens */
         --text-primary:   #0F172A;
         --text-secondary: #475569;
-        --text-tertiary:  #94A3B8;
+        --text-muted:     #94A3B8;
         --text-disabled:  #CBD5E1;
+        --text-inverse:   #FFFFFF;
 
         /* Surface tokens */
-        --surface-base:       #F8FAFC;
-        --surface-raised:     #FFFFFF;
-        --surface-overlay:    rgba(15,23,42,0.48);
-        --surface-border:     #E2E8F0;
-        --surface-border-soft:#F1F5F9;
+        --surface-base:        #F8FAFC;
+        --surface-raised:      #FFFFFF;
+        --surface-overlay:     rgba(15,23,42,0.60);
+        --surface-border:      #E2E8F0;
+        --surface-border-soft: #F1F5F9;
 
         /* Role variables — updated by JS via data-role */
         --role-primary:      #2563EB;
@@ -106,6 +109,84 @@
         --ease-spring:   cubic-bezier(0.34, 1.56, 0.64, 1);
       }
 
+      /* ═══════════════════════════════════════════════
+         DARK / NIGHT MODE TOKENS (Deep Midnight Slate)
+      ═══════════════════════════════════════════════ */
+      .dark, [data-theme="dark"] {
+        /* Surface tokens */
+        --surface-base:       #0B0F19;
+        --surface-raised:     #131B2E;
+        --surface-overlay:    rgba(0, 0, 0, 0.75);
+        --surface-border:     #1E293B;
+        --surface-border-soft:#162032;
+
+        /* Text tokens */
+        --text-primary:   #F8FAFC;
+        --text-secondary: #CBD5E1;
+        --text-tertiary:  #94A3B8;
+        --text-disabled:  #475569;
+
+        /* Semantic Muted Variants */
+        --color-neutral-light: #1E293B;
+        --color-neutral-muted: rgba(148,163,184,0.12);
+
+        --color-info-light:    rgba(37,99,235,0.20);
+        --color-info-muted:    rgba(37,99,235,0.15);
+
+        --color-success-light: rgba(16,185,129,0.20);
+        --color-success-muted: rgba(16,185,129,0.15);
+
+        --color-warning-light: rgba(245,158,11,0.20);
+        --color-warning-muted: rgba(245,158,11,0.15);
+
+        --color-error-light:   rgba(220,38,38,0.20);
+        --color-error-muted:   rgba(220,38,38,0.15);
+      }
+
+      /* Dark mode card, table, input & text overrides scoped strictly to html.dark */
+      html.dark, html.dark body, html.dark #root {
+        background-color: #0B0F19 !important;
+        color: #F8FAFC !important;
+      }
+      html.dark .bg-white {
+        background-color: #131B2E !important;
+      }
+      html.dark .bg-slate-50, html.dark .bg-slate-50\/70, html.dark .bg-slate-50\/80, html.dark .bg-slate-50\/90 {
+        background-color: #162032 !important;
+      }
+      html.dark .border-slate-200, html.dark .border-slate-200\/80, html.dark .border-slate-200\/90, html.dark .border-slate-100, html.dark .border-blue-100\/70 {
+        border-color: #1E293B !important;
+      }
+      html.dark .text-slate-800, html.dark .text-slate-900 {
+        color: #F8FAFC !important;
+      }
+      html.dark .text-slate-700 {
+        color: #E2E8F0 !important;
+      }
+      html.dark .text-slate-600 {
+        color: #CBD5E1 !important;
+      }
+      html.dark .text-slate-500 {
+        color: #94A3B8 !important;
+      }
+      html.dark .text-slate-400 {
+        color: #64748B !important;
+      }
+      html.dark input, html.dark select, html.dark textarea {
+        background-color: #162032 !important;
+        color: #F8FAFC !important;
+        border-color: #1E293B !important;
+      }
+      html.dark input::placeholder {
+        color: #64748B !important;
+      }
+      html.dark ::-webkit-scrollbar-thumb {
+        background: #334155;
+      }
+      html.dark ::-webkit-scrollbar-thumb:hover {
+        background: #475569;
+      }
+
       /* ─── Base Body ─── */
       body {
         background-color: var(--surface-base);
@@ -117,6 +198,7 @@
         color: var(--text-primary);
         font-size: 14px;
         line-height: 1.5;
+        transition: background-color 200ms ease, color 200ms ease;
       }
 
       /* ─── Scrollbar ─── */
@@ -241,7 +323,26 @@
         0%, 100% { transform: translateY(0); }
         50%       { transform: translateY(-4px); }
       }
-      .animate-ai-bounce { animation: aiBounce 1.2s ease-in-out infinite; }
+      @keyframes donutDraw {
+        from { stroke-dashoffset: 238.76; opacity: 0; }
+        to   { opacity: 1; }
+      }
+      .animate-donut-draw { animation: donutDraw 1.2s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+      @keyframes waveDraw {
+        0%   { stroke-dashoffset: 200; }
+        100% { stroke-dashoffset: 0; }
+      }
+      .animate-wave-draw {
+        stroke-dasharray: 200;
+        animation: waveDraw 1.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+      }
+
+      @keyframes pulseSlow {
+        0%, 100% { transform: scale(1); opacity: 1; }
+        50%      { transform: scale(1.03); opacity: 0.95; }
+      }
+      .animate-pulse-slow { animation: pulseSlow 3s ease-in-out infinite; }
 
       /* Stagger delays */
       .delay-50  { animation-delay: 50ms; }
@@ -547,6 +648,18 @@
         border: none;
         border-top: 1px solid var(--surface-border-soft);
         margin: 0;
+      }
+
+      /* ─── Waving Hand Animation ─── */
+      @keyframes wave {
+        0%, 100% { transform: rotate(0deg); }
+        20%, 60% { transform: rotate(14deg); }
+        40%, 80% { transform: rotate(-8deg); }
+      }
+      .animate-wave {
+        display: inline-block;
+        transform-origin: 70% 70%;
+        animation: wave 2.2s infinite ease-in-out;
       }
     </style>
   </head>

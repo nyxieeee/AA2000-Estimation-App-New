@@ -354,7 +354,7 @@ const SYSTEM_RULES: Record<string, { label: string; rules: string; exampleItems:
   },
 };
 
-// ─── STEP 1 PROMPT: Floor Plan Visual Analysis ───────────────────────────────
+// ─── STEP 1 PROMPT: Floor Plan & Document Visual Analysis ────────────────────
 function buildAnalysisPrompt(
   surveyType: string,
   info: { buildingType?: string; floors?: number; location?: string; projectName?: string; surveyScope?: string; torContent?: string },
@@ -367,36 +367,34 @@ function buildAnalysisPrompt(
 
   let torBlock = '';
   if (info.torContent && info.torContent.trim().length > 0) {
-    torBlock = `\n- TERMS OF REFERENCE (TOR) SPECIFICATIONS:\n${info.torContent}\n\n[MANDATORY INSTRUCTION] Adjust your analysis parameters to respect the requirements, camera resolutions, brands, and device counts mentioned in the TOR above.`;
+    torBlock = `\n- TERMS OF REFERENCE (TOR) SPECIFICATIONS:\n${info.torContent}\n\n[MANDATORY INSTRUCTION] Carefully read the specifications above and extract the exact hardware models, brands, and device counts.`;
   }
 
-  return `You are an expert security and fire systems estimator reviewing architectural floor plans and/or technical specification Terms of Reference (TOR) documents for a ${systemLabel} installation in the Philippines.
+  return `You are an expert Electronic Security, Safety, and Auxiliary Systems Estimator in the Philippines reviewing architectural floor plans, plotted equipment drawings, and technical specification / Terms of Reference (TOR) documents for a ${systemLabel} project.
 
-PROJECT DETAILS:
-- Building type: ${info.buildingType || 'Office'}
-- Floors shown: ${info.floors || 1}
-- Location: ${info.location || 'Metro Manila, Philippines'}
-- Project: ${info.projectName || 'Security Installation'}${info.surveyScope ? `\n- Scope: ${info.surveyScope}` : ''}${torBlock}
+PROJECT CONTEXT:
+- Target System: ${systemLabel}
+- Building Type: ${info.buildingType || 'Office'} (${info.floors || 1} floor(s))
+- Location: ${info.location || 'Metro Manila, Philippines'}${info.projectName ? `\n- Project Name: ${info.projectName}` : ''}${info.surveyScope ? `\n- Stated Scope: ${info.surveyScope}` : ''}${torBlock}
 
-TASK:
-1. Carefully analyze the uploaded floor plan image(s) and/or PDF document(s).
-2. === CRITICAL LEGEND & SYMBOL KEY DIRECTIVE ===
-   - Proactively search all uploaded pages/sheets for any section titled "LEGEND", "SYMBOL KEY", "DEVICE SCHEDULE", or containing device symbol icon definitions.
-   - If a LEGEND is present (e.g. Manual Call Point, CCTV Camera, DVR, UPS, Fire Exit Signage, Smoke Detector, Emergency Light, Fire Extinguisher, Walkthrough Metal Detector, Card Reader, EM Lock, Exit Button, Break Glass, Key Switch, Door Contact, Motion Sensor, Panic Button, Strobe/Sounder, Alarm Panels):
-     * Extract ALL device definitions listed in the Legend.
-     * Count each symbol drawn on the floor plan drawing using the exact Legend definitions without adding unwarranted extra hardware.
-     * Explicitly state in the "observations" field: "LEGEND DETECTED: Extracted symbol definitions from Floor Plan Legend Sheet."
-3. === CRITICAL PLOTTED SECURITY EQUIPMENT PLAN DIRECTIVE ===
-   - If the uploaded images/PDFs are "Security Equipment Plans" (plotted drawings showing icons mounted on walls, doors, ceilings, or desks, e.g. "FDAS Plan", "Access Control Plan", "IDS Plan", "CCTV Plan"):
-     * Count EVERY individual icon plotted on the architectural layout per system.
-     * FDAS Sheet: Count Manual Call Points (red bell), Smoke Detectors (discs), Heat Detectors, Emergency Lights (twin heads), Fire Extinguishers, Sprinkler Cylinders, Fire Exit Signage, Strobe Light & Sounders.
-     * Access Control Sheet: Count Card Readers mounted at doors, Electromagnetic Locks (EM Locks), Push to Exit Buttons, Emergency Break Glass units, Key Switches, EE Room controllers.
-     * IDS / Intrusion Sheet: Count Panic Buttons at desks/workstations, Motion Sensors (PIR), Strobe Light & Sounders for IDS (blue strobe), Door Contacts on exterior doors/windows, Honeywell/AJAX IDS Alarm Panels & Keypads.
-     * CCTV Sheet: Count Dome cameras in rooms/hallways, Bullet cameras at exits, NVR / Rack units in EE Room/Server Room.
-     * Multi-Sheet Sets: Aggregate device counts across ALL pages without double-counting identical sheets.
-     * In the "observations" field, explicitly note: "PLOTTED EQUIPMENT PLAN DETECTED: Analyzed plotted icon positions across FDAS, Access Control, IDS, and CCTV sheets."
+CORE DIRECTIVES:
+1. === THOROUGH DOCUMENT & TOR TABLE EXTRACTION ===
+   - If the uploaded document is a Terms of Reference (TOR), Bill of Quantities, or Scope of Work:
+     * Scan and read EVERY TABLE, ROW, AND COLUMN carefully (e.g. Item No., Equipment, Description, Quantity, Brand/Model).
+     * Extract EVERY single equipment/material row into the "extractedTorItems" array with its exact name, specified brand/model, and quantity.
+     * Include all itemized materials: cameras, power adapters, wireless PTP radios, network switches, server/data cabinets, UPS units, Cat6 cables, patch panels, patch cords, modular jacks, RJ45 plugs, THHN wires, duplex outlets, conduits, and pull boxes.
+     * If a table notes "Please itemize the count" (e.g. for pipes, pull boxes, hangers, consumables): calculate realistic, scale-proportional quantities based on the physical device count (e.g., 1-4 cameras/radios = 10-15 pipe lengths, 2-4 standard utility boxes; NOT 100 pipes or 20 massive industrial enclosures!).
+     * STRICT ANTI-HALLUCINATION: NEVER introduce or inject equipment from unrelated systems (e.g. NEVER add PBX phone systems, Fire Alarm panels, X-Ray machines, or turnstiles to a CCTV scope).
 
-Respond in this EXACT JSON format (no markdown, no explanation):
+2. === LEGEND & SYMBOL KEY DIRECTIVE (FOR FLOOR PLANS) ===
+   - If a floor plan with a "LEGEND" or "DEVICE SCHEDULE" is uploaded:
+     * Count each symbol plotted on the floor plan using the exact Legend definitions.
+     * Do NOT add unrequested extra hardware.
+
+3. === PLOTTED SECURITY EQUIPMENT PLAN DIRECTIVE ===
+   - Count only the icons plotted on the architectural layout corresponding to ${systemLabel}.
+
+Respond in this EXACT JSON format (no markdown, no extra explanation):
 {
   "floorCount": <number of floors visible or specified in the plans/TOR>,
   "estimatedTotalAreaSqm": <total built-up area in square meters — estimate from scale or use specified value>,
@@ -422,7 +420,7 @@ Respond in this EXACT JSON format (no markdown, no explanation):
   },
   "ceilingHeightMeters": <estimated ceiling height or 3.0>,
   "buildingPerimeterMeters": <perimeter in meters or 100>,
-  "observations": "Provide a detailed summary (4-5 sentences) of the floor plan layout OR the exact specifications/brands/quantities/constraints extracted from the TOR document. If you read a TOR, list the exact list of hardware, cameras, NVRs, detectors, cables, and quantities you found in the document.",
+  "observations": "Provide a clear summary of the exact specifications, equipment items, quantities, wireless links, and electrical/roughing-in requirements extracted from the TOR or floor plan.",
   "extractedTorItems": [
     {
       "name": "Exact hardware/service name with brand/model if specified",
@@ -458,7 +456,7 @@ function buildBoqPrompt(
 
   let systemRulesBlock = '';
   if (isTorUploaded) {
-    systemRulesBlock = `\n[CRITICAL] A Terms of Reference (TOR) or technical specification document is uploaded. Ignore standard equipment calculation rules. Do NOT estimate or generate any items other than the exact hardware and quantities listed in the TOR.`;
+    systemRulesBlock = `\n[CRITICAL] A Terms of Reference (TOR) or technical specification document is uploaded. Ignore standard generic calculation rules. You MUST generate ONLY the exact hardware, accessories, and quantities listed in the TOR.`;
   } else if (systems.length > 0) {
     systemRulesBlock = systems.map(key => {
       const s = SYSTEM_RULES[key];
@@ -481,308 +479,129 @@ function buildBoqPrompt(
 
   let torBlock = '';
   if (isTorUploaded) {
-    torBlock = `\n\n=== TERMS OF REFERENCE (TOR) SPECIFICATIONS / REQUIREMENTS ===\n${info.torContent}\n\n[MANDATORY ESTIMATION COMPLIANCE] Your generated BOQ, manpower estimation, consumables, and cable lengths MUST strictly comply with the brands, model names, quantities, and roles specified in the TOR above. If the TOR says 2MP Dome Cameras, do NOT estimate 4MP. If the TOR specifies a particular NVR channel size, cabling type, or technician headcount, use exactly that.`;
+    torBlock = `\n\n=== TERMS OF REFERENCE (TOR) SPECIFICATIONS ===\n${info.torContent}\n\n[MANDATORY ESTIMATION COMPLIANCE] Your generated BOQ, manpower estimation, consumables, and cable lengths MUST strictly comply with the brands, model names, quantities, and roles specified in the TOR above.`;
   }
 
   let extractedTorItemsBlock = '';
   if (analysis.extractedTorItems && Array.isArray(analysis.extractedTorItems) && analysis.extractedTorItems.length > 0) {
-    extractedTorItemsBlock = `\n\n=== EXACT HARDWARE & QUANTITIES EXTRACTED FROM TOR DOCUMENT ===\n${JSON.stringify(analysis.extractedTorItems, null, 2)}\n\n[CRITICAL DIRECTIVE] The items above were extracted directly from the uploaded Terms of Reference (TOR) or technical specifications document. Since a TOR is uploaded, you MUST include ONLY the items listed in the "extractedTorItems" block in the "consumables" array in the final JSON. DO NOT estimate or append any additional equipment, items, accessories, or consumables. The final BOQ consumables list MUST match the extracted TOR list 100% strictly.`;
+    extractedTorItemsBlock = `\n\n=== EXACT HARDWARE & QUANTITIES EXTRACTED FROM TOR DOCUMENT ===\n${JSON.stringify(analysis.extractedTorItems, null, 2)}\n\n[CRITICAL DIRECTIVE] The items above were extracted directly from the uploaded Terms of Reference (TOR) or technical specifications document. You MUST include these exact items in the "consumables" array. DO NOT invent or append unrelated equipment (e.g. NO PBX, NO Fire Alarm panels on a CCTV scope).`;
   }
 
   let brandDirectiveBlock = '';
   if (info.selectedBrand && info.selectedBrand !== 'Generalized / Any Brand') {
-    brandDirectiveBlock = `\n\n=== SELECTED BRAND DIRECTIVE ===\nThe user has explicitly selected the target brand "${info.selectedBrand}". Include "${info.selectedBrand}" in the item name and specifications for all active hardware components (e.g. "${info.selectedBrand} 5MP IP Dome Camera", "${info.selectedBrand} 16-Channel NVR").`;
-  } else {
-    brandDirectiveBlock = `\n\n=== BRAND DIRECTIVE ===\nUse generalized, brand-agnostic technical descriptions for all active items (e.g., "5MP IP Dome Camera", "16-Channel NVR", "Addressable Optical Smoke Detector", "Access Control Controller", "24-Port POE Switch"). DO NOT force or append any specific brand name unless an uploaded TOR explicitly requires it.`;
+    brandDirectiveBlock = `\n\n=== SELECTED BRAND DIRECTIVE ===\nThe user selected brand "${info.selectedBrand}". Include "${info.selectedBrand}" in item names where appropriate.`;
   }
 
-  return `You are an expert electronic security and fire safety systems estimator for the Philippines.
+  return `You are an expert Electronic Security, Safety, and Auxiliary Systems Estimator in the Philippines.
 
-You have already analyzed the floor plan and technical documents. Here are the EXACT counts and specifications extracted:
+PROJECT PARAMETERS:
+- Target System: ${systemLabel}
+- Building: ${info.buildingType || 'Commercial/Campus'}, ${info.floors || 1} floor(s), ${info.location || 'Metro Manila'}
+- Extracted Area: ~${totalAreaSqm} sqm, Perimeter: ~${perimeter}m, Ceiling: ~${ceilingH}m
+- Observations: ${(analysis.observations as string) || 'N/A'}${extractedTorItemsBlock}${torBlock}${brandDirectiveBlock}
 
-FLOOR PLAN/DOCUMENT ANALYSIS RESULTS:
-- Total area: ~${totalAreaSqm} sqm across ${analysis.floorCount || info.floors || 1} floor(s)
-- Offices: ${rooms.offices || 0}, Conference rooms: ${rooms.conferenceRooms || 0}, Server rooms: ${rooms.serverRooms || 0}
-- Lobbies: ${rooms.lobbies || 0}, Corridors: ${rooms.corridors || 0}, Toilets: ${rooms.toilets || 0}
-- Stairwells: ${rooms.stairwells || 0}, Elevators: ${rooms.elevatorShafts || 0}
-- Parking slots: ${rooms.parkingSlots || 0}, Warehouse: ${rooms.warehouse || 0}, Kitchen: ${rooms.kitchen || 0}, Other: ${rooms.other || 0}
-- Main entrances: ${doors.mainEntrances || 0}, Fire exits: ${doors.fireExitDoors || 0}
-- Secured/restricted doors: ${doors.securedDoors || 0}, Regular doors: ${doors.regularDoors || 0}
-- Building perimeter: ~${perimeter}m, Ceiling height: ~${ceilingH}m
-- Observations: ${(analysis.observations as string) || 'N/A'}${extractedTorItemsBlock}
+=== STRICT ANTI-HALLUCINATION & SCOPE DISCIPLINE ===
+1. NEVER recommend, invent, or add equipment from unrelated systems (e.g. NEVER add PBX phone systems, Fire Alarm panels, Turnstiles, or Elevator boards to a CCTV scope).
+2. If a TOR is provided, the "consumables" array must contain ONLY the specified items and their necessary mounting/cabling roughing-ins.
 
-SYSTEM TO INSTALL: ${systemLabel}
-Building: ${info.buildingType || 'Office'}, ${info.floors || 1} floor(s), ${info.location || 'Metro Manila'}${info.surveyScope ? `\nScope: ${info.surveyScope}` : ''}${torBlock}${brandDirectiveBlock}
+=== SCALE-PROPORTIONAL SIZING & PHILIPPINE PRICING RULES ===
+1. ENCLOSURE / RACK SIZING:
+   - For small setups (1-8 cameras/devices, 1 switch, 1 UPS): Use a **6U or 9U Wall-Mount Data Cabinet with Glass Door (₱4,500 - ₱6,800)**. NEVER specify a 42U Server Rack (₱125,000)!
+   - For large enterprise setups (20+ cameras, multiple server racks): Use floor-standing racks.
+2. PULL BOXES & CONDUITS:
+   - Small job (1-4 devices / replacement / wireless link): 10-15 lengths EMT/PVC 3/4" (₱180-₱240/len), 2-4 standard utility/pull boxes (₱350-₱1,450/pc). NEVER add 50 pipes or 15 explosion-proof boxes!
+3. MANPOWER CALCULATION (Scaled Proportportionally to Scope):
+   - Small Scope (1-4 cameras / replacement / PTP link): 2 Technicians for 2-3 days (16-24 hours total) = ~₱12,000 - ₱25,000 total labor.
+   - Medium Scope (5-16 cameras/devices): 3-4 Technicians for 5-7 days = ~₱35,000 - ₱65,000 labor.
+   - Large Scope (17+ cameras / campus): Scaled with Lead Engineer and Safety Officer.
+4. PHILIPPINE MARKET REALISTIC UNIT PRICES (PHP ₱):
+   - RJ45 Plugs: ₱25 - ₱45 / pc
+   - Cat6 Keystone Jack / Information Outlet: ₱250 - ₱350 / pc
+   - Cat6 Patch Cord (1m-2m): ₱180 - ₱280 / pc
+   - Cat6 UTP Cable (305m box): ₱8,500 - ₱11,500 / box
+   - THHN 3.5mm² Wire: ₱35 - ₱45 / meter
+   - Panasonic Duplex Outlet: ₱250 - ₱350 / set
+   - 3/4" EMT Pipe (3m): ₱180 - ₱240 / length
+   - 3/4" PVC Pipe (3m): ₱90 - ₱130 / length
+   - Flexible Conduit: ₱35 - ₱55 / meter
+   - Metal/Stainless Pull Box: ₱350 - ₱1,500 / pc
+   - 1kVA UPS: ₱5,500 - ₱8,500 / unit
+   - 8-Port Gigabit PoE Switch: ₱4,500 - ₱7,500 / unit
+   - Cambium ePMP Force 180 (5GHz Radio): ₱6,800 - ₱8,500 / unit
+   - 5MP IP Dome Camera: ₱4,500 - ₱6,800 / unit
+   - 12V 2A Power Supply: ₱380 - ₱550 / unit
 
-=== ZERO UNWARRANTED RECOMMENDATION & SERVICE-SCOPE DIRECTIVE ===
-- NEVER recommend, invent, or add items that are not explicitly requested.
-- If the project, TOR, or survey scope is for SERVICES, LABOR, PREVENTIVE MAINTENANCE (PMS), AUDIT, REPAIR, REPLACEMENT, or RELOCATION:
-  - Do NOT recommend or add new cameras, NVRs, detectors, or complete hardware kits!
-  - The "consumables" array must ONLY contain the exact replacement items or hardware explicitly requested in the document/scope. If no hardware supply is requested, the "consumables" array must be EMPTY [].
-  - Focus the estimation strictly on "manpower", "scopeOfWorks", and procedural service requirements.
-- If a TOR or specification is provided, include ONLY the exact items and quantities written in the TOR. Do NOT extrapolate or add "recommended" accessories.
-
-=== LEGEND & SYMBOL KEY RECOGNITION DIRECTIVE ===
-If the uploaded floor plan contains a LEGEND, SYMBOL KEY, or SYMBOL TABLE (e.g., defining Manual Call Point, Smoke Detector, Emergency Light, Fire Extinguisher, Walkthrough Metal Detector, Card Reader, Electromagnetic Lock, Exit Button, Break Glass, Key Switch, Door Contact, Panic Button, Motion Sensor, Auto Dialer, Strobe/Sounder, Alarm Panel):
-- Include ONLY the device categories plotted or defined in the drawing without adding unrequested extra equipment.
-
-=== EQUIPMENT RULES — Apply ONLY if floor plan drawings show new installation areas without a restrictive TOR/service scope ===
-${systemRulesBlock}
-
-=== AA2000 OFFICIAL CARRIED BRANDS & STRICT COMPATIBILITY RULES ===
-- When a brand is selected, choose strictly from AA2000's carried brand catalog:
-  - CCTV: Hikvision, Dahua Technology, AVTECH, Honeywell, Panasonic, AXIS Communications, Imou, EZVIZ, Matrix Telecom & Security
-  - FDAS (Fire Alarm): Honeywell, EDWARDS, NOTIFIER (by Honeywell), Simplex, Asenware, Hochiki, Numens, Siemens, Eaton, Esser, Apollo, Cooper, Horing Lih, Gamewell-FCI, TYY
-  - Access Control & Biometrics: ZKTeco, Anson, Honeywell, Hikvision, Matrix Telecom & Security, HID, Suprema, IDTECK, CEM Systems, Software House, EntryPass, OK Omnikey, EDGE
-  - Burglar / Intrusion Alarm: Honeywell (Flagship Partner)
-  - Networking & Connectivity: Ruijie Networks (Enterprise Networking Partner)
-  - Metal Detectors & X-Ray Scanners: Uniqscan, Garrett, ZKTeco
-- Enforce strict compatibility:
-  - CCTV: NVR channel size must cover camera count. POE switches MUST match total camera power load.
-  - FDAS: Fire alarm control panel and detectors MUST match the exact loop protocol. Never mix incompatible brands on the same SLC loop!
-  - ACS: Access controller and card readers must match protocol (Wiegand/OSDP). Power supply amperage must cover total lock + reader current draw.
-
-=== CABLE LENGTH CALCULATION ===
-- Route cables from each device back to the nearest panel/NVR/controller
-- Average horizontal run = half the floor width + vertical drop from ceiling
-- Add 15% slack for bends, loops, and termination
-- Use the building perimeter (${perimeter}m) and area (${totalAreaSqm} sqm) to calibrate distances
-
-=== MANPOWER CALCULATION ===
-- Lead Security Engineer: 1 person, full project duration
-- Safety Officer: 1 person, DOLE compliance (full duration)
-- System Installers: size based on scope — ~4–6 CCTV cameras per day, ~100m cable per day, ~8–10 detectors per day, ~4 access doors per day
-- man-days = ceil(headcount × hours / 8)
-- Working hours per day = 8
-
-=== OFFICIAL AA2000 SUPER-DETAILED QUOTATION STRUCTURE DIRECTIVE ===
-You MUST generate a complete, super-detailed AA2000 Commercial Sales Quotation and Engineering BOQ JSON structure containing:
-
-IMPORTANT: All items below MUST be dynamically tailored to the detected system types (${systemLabel}), customer details (${info.clientName || 'Valued Client'}), project title (${info.projectName || `${systemLabel} Engineering & Installation Project`}), building scale (${info.floors || 1} floors), and detected equipment line items.
-- If system is CCTV: Generate detailed procedural steps for camera optical lens cleaning, field of view calibration, NVR S.M.A.R.T. storage diagnostics, PoE switch testing, VMS latency optimization.
-- If system is ACCESS CONTROL: Generate detailed procedural steps for biometric/RFID reader calibration, magnetic lock holding force tests, backup battery load testing, emergency egress fire trip tests.
-- If system is FDAS: Generate detailed procedural steps for FACP diagnostics, detector chamber servicing, manual station inspection, smoke canister testing, FSMR certification.
-- If system is INTRUSION / ALARM: Generate detailed procedural steps for PIR walk tests, magnetic contact alignment, panel telemetry dual-path tests, siren dB level calibration.
-
-1. "quotationReferenceCode": e.g. "PQ-${(info.systemTypes?.[0] || 'ENG').toUpperCase()}-2026-08-${Math.floor(100 + Math.random()*900)}"
-2. "quotationHeader": {
-     "attentionTo": "${info.clientContactName || info.clientName || 'Building Administration / Facilities Head'}",
-     "thru": "Building Manager / Property Operations",
-     "emailAdd": "${info.clientEmail || 'client@company.com'}",
-     "contactNo": "${info.clientPhone || '0917-000-0000'}",
-     "company": "${info.clientName || 'CLIENT CORPORATION'}",
-     "address": "${info.location || 'Metro Manila, Philippines'}",
-     "projectSite": "${info.location || 'Site Location'}",
-     "projectTitle": "${info.projectName || `${systemLabel.toUpperCase()} PREVENTIVE MAINTENANCE & UPGRADE FY: 2026`}",
-     "quoteDate": "${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).toUpperCase()}",
-     "validityPeriod": "30 days from date of this quotation"
-   }
-3. "deviceSummary": {
-     "facpBrand": "${info.selectedBrand && info.selectedBrand !== 'Generalized / Any Brand' ? info.selectedBrand.toUpperCase() : 'EQUIPMENT OEM SPECIFIED'}",
-     "systemType": "${systemLabel.toUpperCase()} SYSTEM",
-     "totalUnitsText": "Hardware & Active Devices Breakdown (TOTAL: calculated units)",
-     "buildingProfile": "${info.floors || 1} FLOORS ${info.buildingType ? `(${info.buildingType})` : ''}",
-     "workingSchedule": "DAY SHIFT 8AM-5PM ONLY | MONDAY TO SATURDAY SCHEDULE",
-     "remarks": "HIGH CEILING: NONE, ORDINARY HEIGHT | INTEGRATION: AS SPECIFIED"
-   }
-4. "generalRequirements": [
-     { "itemNumber": 1, "description": "Mobilization/Demobilization/Delivery of Equipment & Materials", "qty": 1, "unit": "LOT", "unitPrice": 12500, "totalPrice": 12500 },
-     { "itemNumber": 2, "description": "CGL Insurance and Performance Bonds and other insurance\n(not included in this quotation)", "qty": 1, "unit": "LOT", "unitPrice": 0, "totalPrice": 0 },
-     { "itemNumber": 3, "description": "Daily Housekeeping and Proper Disposal of Waste", "qty": 1, "unit": "LOT", "unitPrice": 2000, "totalPrice": 2000 },
-     { "itemNumber": 4, "description": "Safety, signs & barriers ( PPE,fire ext,etc.)& Safety Officer\n(not required, not included)", "qty": 1, "unit": "LOT", "unitPrice": 0, "totalPrice": 0 },
-     { "itemNumber": 5, "description": "Administrative and Regular Coordination Works", "qty": 1, "unit": "LOT", "unitPrice": 3000, "totalPrice": 3000 },
-     { "itemNumber": 6, "description": "Annual Professional Electronics Engineer (PECE) Certification\n(not required, not included)", "qty": 1, "unit": "LOT", "unitPrice": 0, "totalPrice": 0 },
-     { "itemNumber": 7, "description": "Manpower Accomodation N/A", "qty": 1, "unit": "LOT", "unitPrice": 0, "totalPrice": 0 },
-     { "itemNumber": 8, "description": "Site management and Supervision.", "qty": 1, "unit": "LOT", "unitPrice": 10000, "totalPrice": 10000 },
-     { "itemNumber": 9, "description": "Temfacil / Staging Area PROVIDED BY THE CLIENT", "qty": 1, "unit": "LOT", "unitPrice": 0, "totalPrice": 0 },
-     { "itemNumber": 10, "description": "Certificate of Safety and Reliability\nCertificate of ${systemLabel} Testing and Completion\nwith sign and seal of PECE (not included)", "qty": 1, "unit": "LOT", "unitPrice": 0, "totalPrice": 0 }
-   ]
-5. "scopeOfWorks": [
-     // 9 procedural line items with numbered multi-step procedural cleaning and diagnostic actions matching ${systemLabel}
-   ]
-6. "costBreakdown": {
-     "itemATotal": 27500,
-     "itemBTotal": (Total cost of scope of works, equipment and labor in PHP),
-     "subTotal": (itemATotal + itemBTotal),
-     "discount": (proportional realistic discount in PHP),
-     "subTotalWithDiscount": (subTotal - discount),
-     "vat12Percent": (12% of subTotalWithDiscount),
-     "grandTotalAmount": (subTotalWithDiscount + vat12Percent)
-   }
-7. "scheduleOfPayment": [
-     { "itemCode": "A", "milestone": "1st QUARTER / Mobilization Downpayment (40%)", "qty": 1, "unit": "LOT", "unitPrice": (40% of grandTotalAmount), "totalPrice": (40% of grandTotalAmount) },
-     { "itemCode": "B", "milestone": "2nd QUARTER / Progress Billing (20%)", "qty": 1, "unit": "LOT", "unitPrice": (20% of grandTotalAmount), "totalPrice": (20% of grandTotalAmount) },
-     { "itemCode": "C", "milestone": "3rd QUARTER / Progress Billing (20%)", "qty": 1, "unit": "LOT", "unitPrice": (20% of grandTotalAmount), "totalPrice": (20% of grandTotalAmount) },
-     { "itemCode": "D", "milestone": "4th QUARTER / Final Testing & Turnover (20%)", "qty": 1, "unit": "LOT", "unitPrice": (20% of grandTotalAmount), "totalPrice": (20% of grandTotalAmount) }
-   ]
-8. "termsAndConditions": [
-     "Unless specified, above given prices are still subject for EVAT computation.",
-     "Prices are based on cost and conditions existing on date of quotation and are subject to change by the Seller upon final acceptance.",
-     "Internal or External Local or wide area Network cabling for the purpose of remote monitoring is not included in this quotation, and shall be paid separately.",
-     "If the Client opted to use their existing CPU/ Server which is bundled with Operating systems and/or Software Programs related to their daily operations, it must be compliant to the remote monitoring system purchased, otherwise, it would disable the intended normal function, and a separately price quotation for System Evaluation and Re-programming compatibility is needed to correct it.",
-     "Government permits and approvals which might be needed to complete the above work are not included in the scope of works unless specified in this quotation.",
-     "Circuit Breakers, temporarily or permanent electrical source shall be provided by client.",
-     "The company guarantees the original user that the equipment and devices will be free of defects in material and workmanship for a period as stated below from the date of delivery provided the products has not been abused, misused or improperly maintained and /or repaired by unauthorized service personnel; or such defect on the product is the result of voltage surges / brownouts, lightning, water damage, flooding, fire, earthquakes, acts of aggression/ war or other similar phenomenon w/c the company has no control of, will such void the warranty.",
-     "Others: Any other materials/equipment/permits/installation works not stated herein shall be considered as ADDITIONAL COST.",
-     "Bonds: Unless otherwise stipulated in the investment summary, all premium costs for surety bonds, performance bonds, Contractors all-risk insurance, Warranty Bond for the account of the client.",
-     "Warehouse Charges/Penalties: There will be a 500 pesos penalty per day, if devices are not picked up upon notice of availability",
-     "A penalty charge of 40% of the total contract price will be imposed for cancellation of Purchase Order.",
-     "Late Payment Penalty Charge: Any payments not made within the specified period of time for payment will incur an interest charge at the rate of 1% of the total contract price."
-   ]
-
-CRITICAL: Do NOT set pricing to 0. You MUST estimate/calculate realistic market prices in Philippine Pesos (PHP) based on typical industry rates in the Philippines. For each item in the "consumables" array, you MUST provide:
-- "srp": Suggested Retail Price in PHP (realistic retail market rate).
-- "contractorPrice": Contractor Price in PHP (typically 10-15% lower than srp).
-- "dealerPrice": Dealer Price in PHP (typically 15-25% lower than srp).
-
-CRITICAL FOR JSON VALIDITY: All newlines inside string values MUST be written as the two-character sequence \n (escaped), NEVER raw unescaped line breaks.
-Respond ONLY with a single valid JSON object. No markdown fences, no explanation:
+=== REQUIRED JSON OUTPUT STRUCTURE ===
+Generate a valid JSON object matching this schema (all strings with newlines must use escaped \\n):
 
 {
-  "quotationReferenceCode": "PQ-FDAS-2026-08-013",
+  "quotationReferenceCode": "PQ-${(info.systemTypes?.[0] || 'ENG').toUpperCase()}-2026-08-${Math.floor(100 + Math.random()*900)}",
   "quotationHeader": {
-    "attentionTo": "Mr. Jon Carlo A. Castronuevo",
-    "thru": "Building Manager",
-    "emailAdd": "jollibee_center@yahoo.com",
-    "contactNo": "0917 709 1015",
-    "company": "JOLLIBEE CENTER CONDOMINIUM CORPORATION",
-    "address": "San Miguel Ave., Ortigas Center, Brgy. San Antonio, Pasig City",
-    "projectSite": "Pasig City",
-    "projectTitle": "FDAS PREVENTIVE MAINTENANCE FY: 2026 (QUARTERLY)",
-    "quoteDate": "AUGUST 12, 2026",
+    "attentionTo": "${info.clientContactName || info.clientName || 'Facilities & Operations Head'}",
+    "thru": "Property / Building Management",
+    "emailAdd": "${info.clientEmail || 'client@domain.com'}",
+    "contactNo": "${info.clientPhone || '0917-000-0000'}",
+    "company": "${info.clientName || 'CLIENT INSTITUTION'}",
+    "address": "${info.location || 'Metro Manila, Philippines'}",
+    "projectSite": "${info.location || 'Site Location'}",
+    "projectTitle": "${info.projectName || `${systemLabel.toUpperCase()} SUPPLY, INSTALLATION & COMMISSIONING`}",
+    "quoteDate": "${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).toUpperCase()}",
     "validityPeriod": "30 days from date of this quotation"
   },
   "deviceSummary": {
-    "facpBrand": "ASENWARE",
-    "systemType": "ADDRESSABLE FDAS",
-    "totalUnitsText": "1- FACP, 457-SD, 18-HD, 36-H/S, 36-MPS, 19 sets of modules for WF/TS (TOTAL: 567 UNITS)",
-    "buildingProfile": "16 FLOORS WITH 3 BASEMENT",
-    "workingSchedule": "DAY SHIFT 8AM-5PM ONLY | MONDAY TO SATURDAY SCHEDULE",
-    "remarks": "HIGH CEILING: NONE, ORDINARY HEIGHT | INTEGRATION: NOT DECLARED"
+    "facpBrand": "${info.selectedBrand && info.selectedBrand !== 'Generalized / Any Brand' ? info.selectedBrand.toUpperCase() : 'EQUIPMENT OEM SPECIFIED'}",
+    "systemType": "${systemLabel.toUpperCase()} SYSTEM",
+    "totalUnitsText": "Itemized Hardware & Active Devices Breakdown",
+    "buildingProfile": "${info.floors || 1} Floor(s) ${info.buildingType ? `(${info.buildingType})` : ''}",
+    "workingSchedule": "Standard Working Hours | Monday to Saturday",
+    "remarks": "Scope strictly aligned with TOR / Site Specifications"
   },
   "generalRequirements": [
-    { "itemNumber": 1, "description": "Mobilization/Demobilization/Delivery of Equipment & Materials", "qty": 1, "unit": "LOT", "unitPrice": 12500, "totalPrice": 12500 },
-    { "itemNumber": 2, "description": "CGL Insurance and Performance Bonds and other insurance\n(not included in this quotation)", "qty": 1, "unit": "LOT", "unitPrice": 0, "totalPrice": 0 },
-    { "itemNumber": 3, "description": "Daily Housekeeping and Proper Disposal of Waste", "qty": 1, "unit": "LOT", "unitPrice": 2000, "totalPrice": 2000 },
-    { "itemNumber": 4, "description": "Safety, signs & barriers ( PPE,fire ext,etc.)& Safety Officer\n(not required, not included)", "qty": 1, "unit": "LOT", "unitPrice": 0, "totalPrice": 0 },
-    { "itemNumber": 5, "description": "Administrative and Regular Coordination Works", "qty": 1, "unit": "LOT", "unitPrice": 3000, "totalPrice": 3000 },
-    { "itemNumber": 6, "description": "Annual Professional Electronics Engineer (PECE) Certification\n(not required, not included)", "qty": 1, "unit": "LOT", "unitPrice": 0, "totalPrice": 0 },
-    { "itemNumber": 7, "description": "Manpower Accomodation N/A", "qty": 1, "unit": "LOT", "unitPrice": 0, "totalPrice": 0 },
-    { "itemNumber": 8, "description": "Site management and Supervision.", "qty": 1, "unit": "LOT", "unitPrice": 10000, "totalPrice": 10000 },
-    { "itemNumber": 9, "description": "Temfacil / Staging Area PROVIDED BY THE CLIENT", "qty": 1, "unit": "LOT", "unitPrice": 0, "totalPrice": 0 },
-    { "itemNumber": 10, "description": "Certificate of Safety and Reliability\nCertificate of FDAS Testing and Completion\nwith sign and seal of PECE (not included)", "qty": 1, "unit": "LOT", "unitPrice": 0, "totalPrice": 0 }
+    { "itemNumber": 1, "description": "Mobilization/Demobilization & Delivery of Equipment", "qty": 1, "unit": "LOT", "unitPrice": 5000, "totalPrice": 5000 },
+    { "itemNumber": 2, "description": "Safety compliance (PPE, signs, and basic safety gear)", "qty": 1, "unit": "LOT", "unitPrice": 2000, "totalPrice": 2000 },
+    { "itemNumber": 3, "description": "Site supervision, administration & coordination works", "qty": 1, "unit": "LOT", "unitPrice": 3000, "totalPrice": 3000 }
   ],
   "scopeOfWorks": [
-    {
-      "itemNumber": 1,
-      "description": "FIRE ALARM CONTROL PANEL\nGeneral Cleaning\n1. Air dust using portable air blower with non-conductive bristle inside and out.\n2. Use glass cleaners on glass cabinet covers.\n3. Use multi-purpose cleaner on Fire Alarm Control Panel Cabinet.",
-      "unit": "1 LOT",
-      "totalPrice": 0
-    },
-    {
-      "itemNumber": 2,
-      "description": "MANUAL STATIONS /HORN STROBE / BELL\nGeneral Cleaning\n1. Air dusting portable air blower with non-conductive bristle brush inside and out.\n2. Polish with \"Armour All or its equivalent\" inside and out.\n3. Replace damaged break glass or rod.\n4. Spray contact cleaners.\n5. Tightening of terminal screw plugs.",
-      "unit": "1 LOT",
-      "totalPrice": 0
-    },
-    {
-      "itemNumber": 3,
-      "description": "DETECTORS / SENSORS\nGeneral Cleaning\n1. Air dusting of the chamber using portable air blower with non-conductive bristle brush.\n2. Check mounting and fix if needed.\n3. Polish with \"Armour All / or its equivalent\" the smoke chamber vents.\n4. Air dusting and polishing of detector base\n5. Spray contact cleaners on terminals.\n6. Re-tightening of wire termination to ensure no loose connections.\n7. Air dusting of smoke chamber screen.\n8. Use \"Armour All or equivalent\" for parts that cannot be cleaned by soap and water.\n9. Provision of wire tagging and terminal lugs.",
-      "unit": "1 LOT",
-      "totalPrice": 0
-    },
-    {
-      "itemNumber": 4,
-      "description": "PROVIDING CERTIFICATE OF TESTING AND CERTIFICATE OF COMPLETION.\n1. For the purpose of FSIC Renewal, we can provide the Fire Safety Maintenance Report (FSMR) signed by the building Admin and the FDAS service provider.\n2. Should in case we need the sign of the Fire Safety Practitioner (FSP), this shall be billed separately\n3. Reprogramming of address/location shall be billed separately after the PM for FDAS addressable devices only (If any)",
-      "unit": "1 LOT",
-      "totalPrice": 164590
-    },
-    {
-      "itemNumber": 5,
-      "description": "REPLACEMENT OF DAMAGE DEVICES - This shall be billed SEPARATELY OR SUPPLY BY THE OWNER.\n1. Relocation, rewiring, roughing ins are not included in this proposal.\n2. Issuance of WARRANTY CERTIFICATE FOR 1 YEAR for the newly installed devices/equipments (if any)",
-      "unit": "1 LOT",
-      "totalPrice": 0
-    },
-    {
-      "itemNumber": 6,
-      "description": "FREQUENCY: QUARTERLY ACTIVITY OF FDAS PMS\n• Submission of Testing/Technical report after the PM.\n• Cleaning of all the equipment listed above.\n• Inspection of all the equipment listed above.\n• Functional testing of detectors and devices including FACP.\n• Submission of completion report.",
-      "unit": "1 LOT",
-      "totalPrice": 0
-    },
-    {
-      "itemNumber": 7,
-      "description": "SMOKE DETECTOR TESTER - using smoke canister\n• Testing of smoke detector for functionality\n• Allocation: 2 cans of smoke canister",
-      "unit": "2 CANS",
-      "totalPrice": 3800
-    },
-    {
-      "itemNumber": 8,
-      "description": "RENTAL OF TOOLS AND EQUIPMENTS\n• A-Type Ladder or 4 folds ladder\n• Basic technical tools including Multi-tester, Tone Tracer, Clamp meter\n• Cleaning materials and liquid solutions as cleanser for the devices",
-      "unit": "1 LOT",
-      "totalPrice": 0
-    },
-    {
-      "itemNumber": 9,
-      "description": "FREEBIES:\n• Emergency Service response: 1x per quarter total of 4x per year\n• BFP Simulation Testing/BFP Fire Drill: 1x per year",
-      "unit": "1 LOT",
-      "totalPrice": 0
-    }
+    { "itemNumber": 1, "description": "Roughing-ins, conduit routing, and cable pulling", "unit": "1 LOT", "totalPrice": 0 },
+    { "itemNumber": 2, "description": "Hardware mounting, device termination, and wireless link alignment", "unit": "1 LOT", "totalPrice": 0 },
+    { "itemNumber": 3, "description": "Testing, commissioning, integration with existing VMS/network, and turnover", "unit": "1 LOT", "totalPrice": 0 }
   ],
   "costBreakdown": {
-    "itemATotal": 27500,
-    "itemBTotal": 168390,
-    "subTotal": 195890,
-    "discount": 8390,
-    "subTotalWithDiscount": 187500,
-    "vat12Percent": 22500,
-    "grandTotalAmount": 210000
+    "itemATotal": 10000,
+    "itemBTotal": 0,
+    "subTotal": 0,
+    "discount": 0,
+    "subTotalWithDiscount": 0,
+    "vat12Percent": 0,
+    "grandTotalAmount": 0
   },
   "scheduleOfPayment": [
-    { "itemCode": "A", "milestone": "1st QUARTER / Mobilization Downpayment (40%)", "qty": 1, "unit": "LOT", "unitPrice": 84000, "totalPrice": 84000 },
-    { "itemCode": "B", "milestone": "2nd QUARTER / Progress Billing (20%)", "qty": 1, "unit": "LOT", "unitPrice": 42000, "totalPrice": 42000 },
-    { "itemCode": "C", "milestone": "3rd QUARTER / Progress Billing (20%)", "qty": 1, "unit": "LOT", "unitPrice": 42000, "totalPrice": 42000 },
-    { "itemCode": "D", "milestone": "4th QUARTER / Final PMS & FSMR Turnover (20%)", "qty": 1, "unit": "LOT", "unitPrice": 42000, "totalPrice": 42000 }
+    { "itemCode": "A", "milestone": "Downpayment / Mobilization (40%)", "qty": 1, "unit": "LOT", "unitPrice": 0, "totalPrice": 0 },
+    { "itemCode": "B", "milestone": "Progress Billing upon Delivery & Roughing-ins (30%)", "qty": 1, "unit": "LOT", "unitPrice": 0, "totalPrice": 0 },
+    { "itemCode": "C", "milestone": "Final Testing, Commissioning & Turnover (30%)", "qty": 1, "unit": "LOT", "unitPrice": 0, "totalPrice": 0 }
   ],
   "termsAndConditions": [
-    "Unless specified, above given prices are still subject for EVAT computation.",
-    "Prices are based on cost and conditions existing on date of quotation and are subject to change by the Seller upon final acceptance.",
-    "Internal or External Local or wide area Network cabling for the purpose of remote monitoring is not included in this quotation, and shall be paid separately.",
-    "If the Client opted to use their existing CPU/ Server which is bundled with Operating systems and/or Software Programs related to their daily operations, it must be compliant to the remote monitoring system purchased, otherwise, it would disable the intended normal function, and a separately price quotation for System Evaluation and Re-programming compatibility is needed to correct it.",
-    "Government permits and approvals which might be needed to complete the above work are not included in the scope of works unless specified in this quotation.",
-    "Circuit Breakers, temporarily or permanent electrical source shall be provided by client.",
-    "The company guarantees the original user that the equipment and devices will be free of defects in material and workmanship for a period as stated below from the date of delivery provided the products has not been abused, misused or improperly maintained and /or repaired by unauthorized service personnel.",
-    "Others: Any other materials/equipment/permits/installation works not stated herein shall be considered as ADDITIONAL COST.",
-    "Bonds: Unless otherwise stipulated in the investment summary, all premium costs for surety bonds, performance bonds, Contractors all-risk insurance, Warranty Bond for the account of the client.",
-    "Warehouse Charges/Penalties: There will be a 500 pesos penalty per day, if devices are not picked up upon notice of availability",
-    "A penalty charge of 40% of the total contract price will be imposed for cancellation of Purchase Order.",
-    "Late Payment Penalty Charge: Any payments not made within the specified period of time for payment will incur an interest charge at the rate of 1% of the total contract price."
+    "Prices are in Philippine Pesos (PHP) and subject to standard VAT terms.",
+    "Warranty: 1 Year on Equipment and Workmanship against manufacturing defects.",
+    "Power source tapping and permit fees to be coordinated with facility administration."
   ],
-  "observations": "LEGEND DETECTED: Extracted symbol definitions from Floor Plan Legend Sheet. PLOTTED EQUIPMENT PLAN DETECTED: Analyzed plotted icon positions across FDAS, Access Control, IDS, and CCTV sheets. The floor plan includes a detailed layout of an office space with designated areas for offices, conference rooms, server rooms, toilets, and lobbies. Security equipment such as CCTV cameras, access control devices, intrusion detection sensors, and fire detection/alarm systems are plotted throughout the floor. Brands specified include Honeywell for IDS and access panels, HID for card readers, and generic symbols for other devices like smoke detectors, manual call points, and emergency lights.",
+  "observations": "Summary of extracted TOR equipment, wireless radio link requirements, and site conditions.",
   "confidenceScore": 95,
   "manpower": [
-    { "role": "Lead Security Engineer", "headcount": 1, "hours": 80, "manDays": 10, "dayRate": 1000, "totalCost": 10000 },
-    { "role": "Safety Officer", "headcount": 1, "hours": 80, "manDays": 10, "dayRate": 1000, "totalCost": 10000 },
-    { "role": "System Installer", "headcount": 3, "hours": 240, "manDays": 30, "dayRate": 1000, "totalCost": 30000 },
-    { "role": "Technical Assistant", "headcount": 2, "hours": 160, "manDays": 20, "dayRate": 1000, "totalCost": 20000 }
+    { "role": "Lead Systems Technician", "headcount": 1, "hours": 24, "manDays": 3, "dayRate": 1200, "totalCost": 3600 },
+    { "role": "Assistant Installer", "headcount": 1, "hours": 24, "manDays": 3, "dayRate": 900, "totalCost": 2700 }
   ],
   "consumables": [
-    { "name": "Optical Smoke Detector with Base", "brand": "Asenware", "category": "Hardware", "quantity": 457, "unit": "pcs", "srp": 1850, "contractorPrice": 1600, "dealerPrice": 1400, "totalPrice": 845450 },
-    { "name": "Heat Detector Rate of Rise", "brand": "Asenware", "category": "Hardware", "quantity": 18, "unit": "pcs", "srp": 1950, "contractorPrice": 1700, "dealerPrice": 1500, "totalPrice": 35100 },
-    { "name": "Horn Strobe 24VDC Red", "brand": "Asenware", "category": "Hardware", "quantity": 36, "unit": "pcs", "srp": 2800, "contractorPrice": 2450, "dealerPrice": 2200, "totalPrice": 100800 },
-    { "name": "Manual Pull Station Addressable Dual Action", "brand": "Asenware", "category": "Hardware", "quantity": 36, "unit": "pcs", "srp": 3200, "contractorPrice": 2800, "dealerPrice": 2500, "totalPrice": 115200 },
-    { "name": "Input / Monitor Module for Waterflow/Tamper Switch", "brand": "Asenware", "category": "Hardware", "quantity": 19, "unit": "sets", "srp": 4200, "contractorPrice": 3700, "dealerPrice": 3300, "totalPrice": 79800 },
-    { "name": "Addressable Fire Alarm Control Panel 4-Loop", "brand": "Asenware", "category": "Hardware", "quantity": 1, "unit": "unit", "srp": 145000, "contractorPrice": 128000, "dealerPrice": 115000, "totalPrice": 145000 },
-    { "name": "Fire-Resistant Shielded Twisted Pair Cable 2x1.5mm2", "brand": "Generic", "category": "Wires & Cables", "quantity": 1200, "unit": "meters", "srp": 65, "contractorPrice": 55, "dealerPrice": 48, "totalPrice": 78000 },
-    { "name": "1/2\" EMT Conduit Pipe with Connectors & Couplings", "brand": "Generic", "category": "Roughing-ins", "quantity": 350, "unit": "lengths", "srp": 240, "contractorPrice": 210, "dealerPrice": 190, "totalPrice": 84000 }
+    { "name": "Item Description", "brand": "Brand", "category": "Hardware", "quantity": 1, "unit": "pcs", "srp": 5500, "contractorPrice": 4800, "dealerPrice": 4200, "totalPrice": 5500 }
   ],
   "fees": [
-    { "type": "Travel Fee", "amount": 5000, "description": "Mobilization to site (Metro Manila)" },
-    { "type": "Permit Fee", "amount": 10000, "description": "Local government permits and approvals" }
+    { "type": "Travel Fee", "amount": 3000, "description": "Mobilization to site (Metro Manila)" },
+    { "type": "Permit Fee", "amount": 5000, "description": "Local permits and administrative coordination" }
   ],
   "constraints": {
-    "physical": "Ceiling height is ~3m with gypsum board and concrete walls. Limited space in server room for additional equipment. Main entrances and fire exits must remain unobstructed during installation.",
-    "electrical": "Client must provide dedicated 220V power circuits for DVR, FACP, and access control panel. UPS backup required for critical systems (DVR, FACP, IDS Panel). Electrical DB room located near server room.",
-    "installation": "Installation must be conducted during non-business hours (6PM-6AM) to avoid disruption. Access to all areas must be granted 24/7 for installation and testing. Safety officer required on-site at all times."
+    "physical": "Proper mounting brackets and clear line-of-sight required for wireless radio links.",
+    "electrical": "Requires 220VAC clean power source with UPS protection.",
+    "installation": "Coordination with building facilities for ceiling access and cable pathways."
   }
 }`;
 }
@@ -1258,6 +1077,63 @@ function isMetricUnit(unit: string): boolean {
     }
     boq.consumables = resolvedConsumables;
   }
+
+  // --- Dynamic Mathematical Quotation Recalculation ---
+  // Ensure that all subtotals, VAT, grand totals, and payment milestones reflect the exact prices resolved from pricelistData.json
+  const consumablesTotal = (boq.consumables || []).reduce((sum: number, c: any) => sum + (Number(c.totalPrice) || 0), 0);
+  const manpowerTotal = (boq.manpower || []).reduce((sum: number, m: any) => sum + (Number(m.totalCost) || 0), 0);
+  const generalReqsTotal = (boq.generalRequirements || []).reduce((sum: number, g: any) => sum + (Number(g.totalPrice) || 0), 0);
+  const scopeOfWorksTotal = (boq.scopeOfWorks || []).reduce((sum: number, s: any) => sum + (Number(s.totalPrice) || 0), 0);
+  const feesTotal = (boq.fees || []).reduce((sum: number, f: any) => sum + (Number(f.amount) || 0), 0);
+
+  const calculatedItemATotal = generalReqsTotal > 0 ? generalReqsTotal : 10000;
+  const calculatedItemBTotal = consumablesTotal + manpowerTotal + scopeOfWorksTotal + feesTotal;
+  const calculatedSubTotal = calculatedItemATotal + calculatedItemBTotal;
+  const discount = Math.min(Number(boq.costBreakdown?.discount) || 0, Math.round(calculatedSubTotal * 0.15));
+  const subTotalWithDiscount = Math.max(0, calculatedSubTotal - discount);
+  const vat12 = Math.round(subTotalWithDiscount * 0.12);
+  const grandTotal = subTotalWithDiscount + vat12;
+
+  boq.costBreakdown = {
+    itemATotal: calculatedItemATotal,
+    itemBTotal: calculatedItemBTotal,
+    subTotal: calculatedSubTotal,
+    discount,
+    subTotalWithDiscount,
+    vat12Percent: vat12,
+    grandTotalAmount: grandTotal,
+  };
+
+  const downpayment = Math.round(grandTotal * 0.40);
+  const progressBilling = Math.round(grandTotal * 0.30);
+  const finalTurnover = grandTotal - downpayment - progressBilling;
+
+  boq.scheduleOfPayment = [
+    {
+      itemCode: 'A',
+      milestone: '1st Payment / Mobilization Downpayment (40%)',
+      qty: 1,
+      unit: 'LOT',
+      unitPrice: downpayment,
+      totalPrice: downpayment,
+    },
+    {
+      itemCode: 'B',
+      milestone: '2nd Payment / Progress Billing upon Delivery & Installation (30%)',
+      qty: 1,
+      unit: 'LOT',
+      unitPrice: progressBilling,
+      totalPrice: progressBilling,
+    },
+    {
+      itemCode: 'C',
+      milestone: '3rd Payment / Final Testing, Commissioning & Turnover (30%)',
+      qty: 1,
+      unit: 'LOT',
+      unitPrice: finalTurnover,
+      totalPrice: finalTurnover,
+    },
+  ];
 
   if (analysis.observations && typeof analysis.observations === 'string') {
     const obsStr = analysis.observations as string;

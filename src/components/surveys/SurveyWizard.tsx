@@ -79,6 +79,56 @@ export default function SurveyWizard({ projectId, surveyType, onComplete, onBack
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [mode, setMode] = useState<'ai' | 'manual' | null>(null);
+  const [aiBaseline, setAiBaseline] = useState<any>(null);
+
+  useEffect(() => {
+    try {
+      const rawBaseline = localStorage.getItem(`aa2000_ai_baseline_${projectId}`);
+      if (rawBaseline) {
+        setAiBaseline(JSON.parse(rawBaseline));
+      } else {
+        const rawEst = localStorage.getItem(`aa2000_estimation_${projectId}`);
+        if (rawEst) {
+          const parsed = JSON.parse(rawEst);
+          if (parsed.aiBaseline) setAiBaseline(parsed.aiBaseline);
+        }
+      }
+    } catch (e) {}
+  }, [projectId]);
+
+  const handleApplyAiBaseline = () => {
+    if (!aiBaseline) return;
+    const patch: Record<string, any> = {};
+
+    if (aiBaseline.consumables && Array.isArray(aiBaseline.consumables)) {
+      const items = aiBaseline.consumables;
+      const cameraItems = items.filter((c: any) => c.category === 'Camera' || c.name?.toLowerCase().includes('camera'));
+      if (cameraItems.length > 0) {
+        patch.indoorCameras = cameraItems.filter((c: any) => c.name?.toLowerCase().includes('dome') || c.name?.toLowerCase().includes('indoor')).reduce((s: number, c: any) => s + (Number(c.quantity) || 0), 0);
+        patch.outdoorCameras = cameraItems.filter((c: any) => c.name?.toLowerCase().includes('bullet') || c.name?.toLowerCase().includes('outdoor')).reduce((s: number, c: any) => s + (Number(c.quantity) || 0), 0);
+        if (!patch.indoorCameras && !patch.outdoorCameras) {
+          patch.indoorCameras = cameraItems.reduce((s: number, c: any) => s + (Number(c.quantity) || 0), 0);
+        }
+      }
+      const detectorItems = items.filter((c: any) => c.category === 'Detector' || c.name?.toLowerCase().includes('smoke') || c.name?.toLowerCase().includes('heat'));
+      if (detectorItems.length > 0) {
+        patch.smokeDetectors = detectorItems.reduce((s: number, c: any) => s + (Number(c.quantity) || 0), 0);
+      }
+      const doorItems = items.filter((c: any) => c.category === 'Access Control' || c.name?.toLowerCase().includes('reader') || c.name?.toLowerCase().includes('door'));
+      if (doorItems.length > 0) {
+        patch.singleDoors = doorItems.reduce((s: number, c: any) => s + (Number(c.quantity) || 0), 0);
+      }
+    }
+
+    if (aiBaseline.constraints) {
+      patch.physicalConstraints = aiBaseline.constraints.physical;
+      patch.electricalConstraints = aiBaseline.constraints.electrical;
+      patch.installationConstraints = aiBaseline.constraints.installation;
+    }
+
+    setFormData(prev => ({ ...prev, ...patch }));
+    setMode('manual');
+  };
 
   useEffect(() => {
     const loadProjectDetails = async () => {
@@ -316,6 +366,32 @@ export default function SurveyWizard({ projectId, surveyType, onComplete, onBack
 
         {/* ── Main Content ── */}
         <main style={{ flex: 1, overflowY: 'auto', padding: '32px 40px' }}>
+          {/* AI Pre-Estimation Helper Banner */}
+          {aiBaseline && mode !== 'ai' && (
+            <div className="mb-6 p-4 rounded-xl border border-indigo-200 bg-gradient-to-r from-indigo-50/80 to-blue-50/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center text-sm font-black shrink-0">
+                  🤖
+                </div>
+                <div>
+                  <h4 className="text-xs font-black text-slate-800 uppercase tracking-wide">
+                    AI Pre-Estimation Available for this Project
+                  </h4>
+                  <p className="text-[11px] text-slate-500 font-medium">
+                    Pre-populate this survey form with AI recommended hardware and device specifications as a starting baseline.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleApplyAiBaseline}
+                className="px-4 py-2 rounded-lg text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition-all shadow-xs shrink-0 cursor-pointer flex items-center gap-1.5 self-start sm:self-auto"
+              >
+                <span>⚡ Apply AI Baseline</span>
+              </button>
+            </div>
+          )}
+
           {/* Form card */}
           <div style={{
             background: '#fff',
