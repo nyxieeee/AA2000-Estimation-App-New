@@ -614,6 +614,14 @@ export default function Dashboard({
     } catch {}
   }, [isDark]);
 
+  // Live digital clock
+  const [now, setNow] = useState<Date>(() => new Date());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+  const digitalClock = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
   const [editProject, setEditProject] = useState<Project | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [projectList, setProjectList] = useState<Project[]>(projects);
@@ -808,7 +816,6 @@ export default function Dashboard({
             projects={projects}
             aiScans={aiScans}
             isDark={isDark}
-            onToggleTheme={() => setIsDark(d => !d)}
             onNewSurvey={() => {
               setIsCompanyMode(false);
               setShowCreate(true);
@@ -847,7 +854,6 @@ export default function Dashboard({
                 projects={projects}
                 aiScans={aiScans}
                 isDark={isDark}
-                onToggleTheme={() => setIsDark(d => !d)}
                 onNewSurvey={() => {
                   setMobileMenuOpen(false);
                   setIsCompanyMode(false);
@@ -920,6 +926,21 @@ export default function Dashboard({
                 onChange={e => setSearch(e.target.value)}
                 className="search-input w-48 lg:w-56 pl-9 pr-3 py-1.5 rounded-xl text-[11px] font-medium bg-slate-50/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 outline-none text-slate-700 dark:text-slate-200 focus:bg-white dark:focus:bg-slate-800 transition-all"
               />
+            </div>
+
+            {/* Digital Clock */}
+            <div
+              className={`hidden sm:flex items-center gap-2 pl-3 pr-2 py-1.5 rounded-xl border text-[11px] font-black tracking-wider font-mono ${
+                isDark
+                  ? 'bg-slate-800/80 border-slate-700 text-slate-200'
+                  : 'bg-slate-50/80 border-slate-200 text-slate-700'
+              }`}
+              title={now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            >
+              <svg className="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>{digitalClock}</span>
             </div>
 
             {/* Dark / Night Mode Toggle */}

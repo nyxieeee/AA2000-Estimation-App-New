@@ -25,7 +25,6 @@ interface Props {
   onNewSurvey?: () => void;
   isMobile?: boolean;
   isDark?: boolean;
-  onToggleTheme?: () => void;
 }
 
 const navIcons: Record<string, (active: boolean) => React.ReactNode> = {
@@ -254,7 +253,7 @@ const navIcons: Record<string, (active: boolean) => React.ReactNode> = {
 
 };
 
-export default function Sidebar({ user, currentView, onNavigate, notifications, projects, aiScans, onNewSurvey, isMobile, isDark, onToggleTheme }: Props) {
+export default function Sidebar({ user, currentView, onNavigate, notifications, projects, aiScans, onNewSurvey, isMobile, isDark }: Props) {
   const isAdmin = user.role === 'ADMIN';
   const theme = getRoleTheme(user.role, isDark);
   const [collapsedState, setCollapsed] = useState(false);
@@ -691,7 +690,7 @@ export default function Sidebar({ user, currentView, onNavigate, notifications, 
           </div>
         </div>
 
-        {/* System status + Theme toggle */}
+        {/* System status */}
         {!collapsed ? (
           <div className="px-4 pb-3 flex items-center justify-between text-[10px]">
             <div className="flex items-center gap-1.5">
@@ -701,44 +700,7 @@ export default function Sidebar({ user, currentView, onNavigate, notifications, 
               </span>
               <span className="font-extrabold text-emerald-600 dark:text-emerald-400 tracking-wider">SYSTEM ONLINE</span>
             </div>
-            <div className="flex items-center gap-2">
-              {onToggleTheme && (
-                <button
-                  onClick={onToggleTheme}
-                  className="p-1 rounded-md text-slate-400 hover:text-slate-700 dark:hover:text-amber-400 hover:bg-slate-200/50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                  title={isDark ? 'Switch to Light Mode' : 'Switch to Night Mode'}
-                >
-                  {isDark ? (
-                    <svg className="w-3.5 h-3.5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
-                    </svg>
-                  ) : (
-                    <svg className="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
-                    </svg>
-                  )}
-                </button>
-              )}
-              <span className="text-slate-400 font-semibold">v5.0</span>
-            </div>
-          </div>
-        ) : onToggleTheme ? (
-          <div className="pb-3 flex justify-center">
-            <button
-              onClick={onToggleTheme}
-              className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-amber-400 hover:bg-slate-200/50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-              title={isDark ? 'Switch to Light Mode' : 'Switch to Night Mode'}
-            >
-              {isDark ? (
-                <svg className="w-4 h-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
-                </svg>
-              ) : (
-                <svg className="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
-                </svg>
-              )}
-            </button>
+            <span className="text-slate-400 font-semibold">v5.0</span>
           </div>
         ) : null}
       </div>
